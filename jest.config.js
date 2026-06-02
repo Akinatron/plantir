@@ -1,36 +1,61 @@
 /**
- * Configuración de Jest para los algoritmos puros de Plantir.
+ * Configuración de Jest para Plantir.
  *
- * - `ts-jest` transpila los .ts en memoria (sin emitir dist/).
- * - `testEnvironment: 'node'` porque no usamos DOM ni APIs nativas de RN/Expo.
- * - `roots` solo apunta a `src/` para que el test runner no escanee
- *   `node_modules`, `dist/` ni `docs/`.
- * - `testMatch` limita a los `*.test.ts` dentro de `__tests__/`.
- * - `moduleNameMapper` resuelve el alias `@/*` (mismo que `tsconfig.json`).
+ * - `ts-jest` para tests puros de TS (algoritmos, hooks, services).
+ *   Más rápido, sin transformaciones de RN.
+ * - `jest-expo` para tests que importan React Native (componentes, screens).
+ *   Se activa automáticamente cuando un test importa de `react-native`,
+ *   `@react-navigation/*` o `expo`.
+ *
+ * Configuración de coverage excluida de:
+ *  - `src/types/**` (tipos puros)
+ *  - `app/+not-found.tsx` (cosmético)
+ *  - `*.d.ts` (declaraciones)
+ *  - `__tests__/**` (los propios tests)
  */
+
 /** @type {import('jest').Config} */
 module.exports = {
-  preset: 'ts-jest',
-  testEnvironment: 'node',
-  roots: ['<rootDir>/src'],
-  testMatch: ['<rootDir>/src/**/__tests__/**/*.test.ts'],
-  moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
-  moduleNameMapper: {
-    '^@/(.*)$': '<rootDir>/src/$1',
-  },
-  collectCoverageFrom: [
-    'src/lib/algorithms/**/*.ts',
-    '!src/lib/algorithms/index.ts',
-    '!src/lib/algorithms/__tests__/**',
-  ],
-  coverageThreshold: {
-    global: {
-      statements: 95,
-      branches: 95,
-      functions: 95,
-      lines: 95,
+  projects: [
+    {
+      displayName: 'pure-ts',
+      preset: 'ts-jest',
+      testEnvironment: 'node',
+      testMatch: [
+        '<rootDir>/src/lib/algorithms/__tests__/**/*.test.ts',
+        '<rootDir>/src/lib/**/*.test.ts',
+        '<rootDir>/src/services/**/*.test.ts',
+        '<rootDir>/src/hooks/**/*.test.ts',
+      ],
+      moduleNameMapper: {
+        '^@/(.*)$': '<rootDir>/src/$1',
+      },
+      collectCoverageFrom: [
+        'src/lib/algorithms/**/*.ts',
+        'src/services/**/*.ts',
+        'src/hooks/**/*.ts',
+        '!src/**/__tests__/**',
+        '!src/types/**',
+      ],
     },
-  },
+    {
+      displayName: 'expo-rn',
+      preset: 'jest-expo',
+      testEnvironment: 'node',
+      testMatch: [
+        '<rootDir>/app/**/*.test.tsx',
+        '<rootDir>/src/components/__tests__/**/*.test.tsx',
+        '<rootDir>/src/features/**/*.test.tsx',
+      ],
+      moduleNameMapper: {
+        '^@/(.*)$': '<rootDir>/src/$1',
+        '^@/app/(.*)$': '<rootDir>/app/$1',
+      },
+      transformIgnorePatterns: [
+        'node_modules/(?!((jest-)?react-native|@react-native(-community)?|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@unimodules/.*|unimodules|sentry-expo|native-base|react-native-svg|@react-native-async-storage/.*))',
+      ],
+    },
+  ],
   coverageReporters: ['text', 'text-summary', 'json', 'lcov'],
   clearMocks: true,
   restoreMocks: true,

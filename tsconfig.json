@@ -1,9 +1,6 @@
 {
+  "extends": "expo/tsconfig.base",
   "compilerOptions": {
-    "target": "ES2022",
-    "module": "commonjs",
-    "moduleResolution": "node",
-    "lib": ["ES2022"],
     "strict": true,
     "noImplicitAny": true,
     "strictNullChecks": true,
@@ -15,6 +12,7 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noImplicitReturns": true,
+    "skipLibCheck": true,
     "noFallthroughCasesInSwitch": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
@@ -22,14 +20,32 @@
     "resolveJsonModule": true,
     "declaration": false,
     "sourceMap": true,
-    "outDir": "./dist",
-    "rootDir": "./",
+    "moduleResolution": "node",
+    "module": "ESNext",
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM"],
+    "jsx": "react-jsx",
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["src/*"],
+      "@/app/*": ["app/*"],
+      "@/components/*": ["src/components/*"],
+      "@/features/*": ["src/features/*"],
+      "@/hooks/*": ["src/hooks/*"],
+      "@/lib/*": ["src/lib/*"],
+      "@/services/*": ["src/services/*"],
+      "@/stores/*": ["src/stores/*"],
+      "@/theme/*": ["src/theme/*"],
+      "@/types": ["src/types"],
+      "@/constants/*": ["src/constants/*"]
     },
-    "types": ["node", "jest"]
+    "types": ["node", "jest", "react-native"]
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist"]
+  "include": [
+    "src/**/*",
+    "app/**/*",
+    ".expo/types/**/*.ts",
+    "expo-env.d.ts"
+  ],
+  "exclude": ["node_modules", "supabase/functions/**"]
 }

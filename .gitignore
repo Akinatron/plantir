@@ -14,3 +14,22 @@ build/
 
 # Expo
 .expo/
+
+# Test coverage
+coverage/
+
+# Tooling runtime state (Mavis, OpenCode, etc.)
+.mavis/
+.opencode/
+
+# IDE / OS
+.vscode/
+.idea/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Supabase local
+supabase/.branches/
+supabase/.temp/

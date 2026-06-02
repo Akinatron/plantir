@@ -353,3 +353,258 @@ export const asCents = (n: number): Cents => {
   return n as Cents;
 };
 export const asCurrency = (s: string): CurrencyCode => s as CurrencyCode;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Aliases y extensiones para Fase 3 (mobile) y Fase 2 (algoritmos puros)
+// ─────────────────────────────────────────────────────────────────────────────
+// El PRD canónico (secciones 3, 6, 7) usa nombres como `kind`, `paidBy`,
+// `occurredAt`, `level: 'yes'|'maybe'|'no'`. Los algoritmos puros y los
+// servicios de Fase 2/3 usan nombres equivalentes (4 niveles de
+// availability, `payerId`, `paidAt`, `splitType`). Estos aliases
+// permiten que ambos vocabularios convivan sin divergir del modelo canónico.
+
+/** Tipo del poll (alias de `PollKind`). */
+export type PollType = PollKind;
+
+/** Estados de un poll. */
+export type { PollStatus };
+
+/** 4 niveles de disponibilidad (prefer/maybe/yes/no) — usado por datePoll.ts. */
+export type Availability = 'available' | 'prefer' | 'maybe' | 'unavailable';
+
+/** Tipo de expense (alias del campo canónico `category` ampliado). */
+export type ExpenseType = 'expense' | 'income';
+
+/** Tipos de split (usado por `expenses.ts`). El canónico usa `strategy`. */
+export type SplitType = 'equal' | 'amount' | 'percentage' | 'shares' | 'exclude';
+
+/** Sub-rango votado por un usuario en un date poll (alias de `DateAvailabilityVote`). */
+export interface AvailabilityRange {
+  start: string;
+  end: string;
+  availability: Availability;
+}
+
+/** Disponibilidad agregada de un usuario en un poll. */
+export interface UserAvailability {
+  userId: UserId;
+  ranges: AvailabilityRange[];
+}
+
+/** Config de un date poll (usado por `datePoll.ts`). */
+export interface PollConfig {
+  allowedRanges: DateRange[];
+  minTripDays: number;
+  maxTripDays: number;
+  maybeWeight: number;
+  preferWeight: number;
+  canWeight: number;
+  cannotWeight: number;
+  requiredMemberIds: UserId[];
+  pendingPolicy: 'include' | 'exclude' | 'penalize';
+}
+
+/** Rango de fechas simple (usado por `datePoll.ts`). */
+export interface DateRange {
+  start: string;
+  end: string;
+}
+
+/** Candidato rankeado de date poll. */
+export interface CandidateDate {
+  start: string;
+  end: string;
+  durationDays: number;
+  availableMembers: UserId[];
+  preferredMembers: UserId[];
+  maybeMembers: UserId[];
+  unavailableMembers: UserId[];
+  pendingMembers: UserId[];
+  requiredMembersMissing: UserId[];
+  score: number;
+  rank: number;
+  rankReason: string;
+}
+
+/** Balance neto de un miembro. */
+export interface MemberBalance {
+  memberId: UserId;
+  netCents: Cents;
+  currency: CurrencyCode;
+}
+
+/** Settlement sugerido (alias del canónico, con campos del algoritmo). */
+export interface AlgorithmSettlement {
+  fromMemberId: UserId;
+  toMemberId: UserId;
+  amountCents: Cents;
+  currency: CurrencyCode;
+}
+
+/** Disponibilidad agregada de un usuario en un poll. */
+export interface UserAvailability {
+  userId: UserId;
+  ranges: AvailabilityRange[];
+}
+
+/** Config de un date poll (usado por `datePoll.ts`). */
+export interface PollConfig {
+  allowedRanges: DateRange[];
+  minTripDays: number;
+  maxTripDays: number;
+  maybeWeight: number;
+  preferWeight: number;
+  canWeight: number;
+  cannotWeight: number;
+  requiredMemberIds: UserId[];
+  pendingPolicy: 'include' | 'exclude' | 'penalize';
+}
+
+/** Rango de fechas simple (usado por `datePoll.ts`). */
+export interface DateRange {
+  start: string;
+  end: string;
+}
+
+/** Candidato rankeado de date poll. */
+export interface CandidateDate {
+  start: string;
+  end: string;
+  durationDays: number;
+  availableMembers: UserId[];
+  preferredMembers: UserId[];
+  maybeMembers: UserId[];
+  unavailableMembers: UserId[];
+  pendingMembers: UserId[];
+  requiredMembersMissing: UserId[];
+  score: number;
+  rank: number;
+  rankReason: string;
+}
+
+/** Balance neto de un miembro. */
+export interface MemberBalance {
+  memberId: UserId;
+  netCents: Cents;
+  currency: CurrencyCode;
+}
+
+/** Settlement sugerido (alias del canónico, con campos del algoritmo). */
+export interface AlgorithmSettlement {
+  fromMemberId: UserId;
+  toMemberId: UserId;
+  amountCents: Cents;
+  currency: CurrencyCode;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Aliases 1:1 con los canónicos del PRD (para compatibilidad con código
+// de Fase 2/3 que usa nombres ligeramente distintos)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Perfil del usuario. */
+export interface Profile {
+  id: UserId;
+  displayName: string;
+  avatarUrl: string | null;
+  locale: string;
+  defaultCurrency: CurrencyCode;
+  timezone: string;
+  createdAt: ISODateString;
+  updatedAt: ISODateString;
+}
+
+/** Trip con campos alineados al modelo canónico. */
+export interface Trip extends Omit<import('./index').Trip, 'state'> {
+  state: import('./index').TripState;
+  coverImagePath: string | null;
+}
+
+/** NewTripInput es `Trip` con campos opcionales. */
+export interface NewTripInput {
+  name: string;
+  description?: string | null;
+  currency: CurrencyCode;
+  coverImagePath?: string | null;
+}
+export type CreateTripInput = NewTripInput;
+
+/** TripMember. */
+export interface TripMember {
+  id: TripMemberId;
+  tripId: TripId;
+  userId: UserId;
+  role: TripRole;
+  displayName: string;
+  avatarUrl: string | null;
+  joinedAt: ISODateString;
+  leftAt: ISODateString | null;
+}
+
+/** TripInvite. */
+export interface TripInvite {
+  id: TripInviteId;
+  tripId: TripId;
+  tokenHash: string;
+  expiresAt: ISODateString;
+  maxUses: number | null;
+  usedCount: number;
+  revokedAt: ISODateString | null;
+  createdBy: UserId;
+  createdAt: ISODateString;
+}
+
+/** DatePollAllowedRange (canónico). */
+export interface DatePollAllowedRange {
+  id: string;
+  pollId: PollId;
+  startDate: string;
+  endDate: string;
+}
+
+/** DatePollResult (canónico). */
+export interface DatePollResult {
+  id: string;
+  pollId: PollId;
+  candidateStart: string;
+  candidateEnd: string;
+  durationDays: number;
+  score: number;
+  availableMemberIds: UserId[];
+  preferredMemberIds: UserId[];
+  maybeMemberIds: UserId[];
+  unavailableMemberIds: UserId[];
+  pendingMemberIds: UserId[];
+  requiredMembersMissing: UserId[];
+  rank: number;
+  computedAt: ISODateString;
+}
+
+/** ExpensePayer — quien paga un expense. */
+export interface ExpensePayer {
+  expenseId: ExpenseId;
+  memberId: UserId;
+  amountCents: Cents;
+}
+
+/** CreateExpenseInput — payload de creación. */
+export interface CreateExpenseInput {
+  tripId: TripId;
+  title: string;
+  description?: string | null;
+  category: ExpenseCategory;
+  type: ExpenseType;
+  amountCents: Cents;
+  currency: CurrencyCode;
+  paidAt?: string;
+  payers: Array<{ memberId: UserId; amountCents: Cents }>;
+  splits: Array<{
+    memberId: UserId;
+    splitType: SplitType;
+    amountCents?: Cents;
+    percentage?: number;
+    shares?: number;
+    included: boolean;
+  }>;
+  receiptStoragePath?: string | null;
+}
