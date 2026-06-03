@@ -18,6 +18,7 @@ export const Button = forwardRef<ElementRef<typeof Pressable>, ButtonProps>(
         style={({ pressed }) => [
           styles.base,
           styles[variant],
+          props.disabled && styles.disabled,
           pressed && styles.pressed,
           typeof style === 'function' ? style({ pressed }) : style,
         ]}
@@ -47,6 +48,9 @@ const styles = StyleSheet.create({
   },
   pressed: {
     opacity: 0.82,
+  },
+  disabled: {
+    opacity: 0.5,
   },
   label: {
     color: '#FFFFFF',

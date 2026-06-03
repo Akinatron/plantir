@@ -24,3 +24,7 @@ export function getRequiredSupabaseEnv() {
     supabaseAnonKey: EXPO_PUBLIC_SUPABASE_ANON_KEY,
   };
 }
+
+export function hasRequiredSupabaseEnv(): boolean {
+  return Boolean(env.EXPO_PUBLIC_SUPABASE_URL && env.EXPO_PUBLIC_SUPABASE_ANON_KEY);
+}
