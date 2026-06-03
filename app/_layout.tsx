@@ -17,6 +17,9 @@ export default function RootLayout() {
         <Stack.Screen name="trips/[tripId]/members" options={{ title: 'Members' }} />
         <Stack.Screen name="trips/[tripId]/invite" options={{ title: 'Invite' }} />
         <Stack.Screen name="trips/[tripId]/settings" options={{ title: 'Settings' }} />
+        <Stack.Screen name="trips/[tripId]/date-poll/setup" options={{ title: 'Date poll setup' }} />
+        <Stack.Screen name="trips/[tripId]/date-poll/vote" options={{ title: 'Date poll' }} />
+        <Stack.Screen name="trips/[tripId]/date-poll/results" options={{ title: 'Date results' }} />
         <Stack.Screen name="invite/[token]" options={{ title: 'Invitation' }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       </Stack>

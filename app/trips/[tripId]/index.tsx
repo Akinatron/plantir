@@ -58,8 +58,17 @@ export default function TripDashboardScreen() {
         </View>
 
         <View style={styles.actions}>
+          <Link href={`/trips/${trip.id}/date-poll/setup`} asChild>
+            <Button label="Set up date poll" />
+          </Link>
+          <Link href={`/trips/${trip.id}/date-poll/vote`} asChild>
+            <Button label="Vote on dates" variant="secondary" />
+          </Link>
+          <Link href={`/trips/${trip.id}/date-poll/results`} asChild>
+            <Button label="View date results" variant="secondary" />
+          </Link>
           <Link href={`/trips/${trip.id}/invite`} asChild>
-            <Button label="Invite friends" />
+            <Button label="Invite friends" variant="secondary" />
           </Link>
           <Link href={`/trips/${trip.id}/members`} asChild>
             <Button label="View members" variant="secondary" />
