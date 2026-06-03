@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Link, useRouter } from 'expo-router';
+import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import { Controller, useForm } from 'react-hook-form';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
 
@@ -14,6 +14,7 @@ import { LoginFormValues, loginSchema } from '../src/lib/validation/auth';
 
 export default function LoginScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ next?: string }>();
   const { error: authError, isConfigured } = useAuth();
   const loginMutation = useLoginMutation();
   const magicLinkMutation = useMagicLinkMutation();
@@ -32,7 +33,7 @@ export default function LoginScreen() {
 
   const onSubmit = handleSubmit(async (values) => {
     await loginMutation.mutateAsync(values);
-    router.replace('/(tabs)/trips');
+    router.replace(params.next ?? '/(tabs)/trips');
   });
 
   const onMagicLink = async () => {
@@ -115,7 +116,10 @@ export default function LoginScreen() {
             />
           </View>
 
-          <Link href="/signup" style={styles.link}>
+          <Link
+            href={{ pathname: '/signup', params: params.next ? { next: params.next } : undefined }}
+            style={styles.link}
+          >
             Create an account
           </Link>
         </ScrollView>

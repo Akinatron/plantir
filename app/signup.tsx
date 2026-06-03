@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Link, useRouter } from 'expo-router';
+import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import { Controller, useForm } from 'react-hook-form';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
 
@@ -14,6 +14,7 @@ import { SignupFormValues, signupSchema } from '../src/lib/validation/auth';
 
 export default function SignupScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ next?: string }>();
   const { error: authError, isConfigured } = useAuth();
   const signupMutation = useSignupMutation();
   const {
@@ -31,7 +32,7 @@ export default function SignupScreen() {
 
   const onSubmit = handleSubmit(async (values) => {
     await signupMutation.mutateAsync(values);
-    router.replace('/(tabs)/trips');
+    router.replace(params.next ?? '/(tabs)/trips');
   });
 
   return (
@@ -117,7 +118,10 @@ export default function SignupScreen() {
             disabled={!isConfigured || signupMutation.isPending}
           />
 
-          <Link href="/login" style={styles.link}>
+          <Link
+            href={{ pathname: '/login', params: params.next ? { next: params.next } : undefined }}
+            style={styles.link}
+          >
             Already have an account?
           </Link>
         </ScrollView>

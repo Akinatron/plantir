@@ -12,6 +12,12 @@ export default function RootLayout() {
         <Stack.Screen name="welcome" options={{ headerShown: false }} />
         <Stack.Screen name="login" options={{ title: 'Log in' }} />
         <Stack.Screen name="signup" options={{ title: 'Sign up' }} />
+        <Stack.Screen name="trips/create" options={{ title: 'Create trip' }} />
+        <Stack.Screen name="trips/[tripId]/index" options={{ title: 'Trip' }} />
+        <Stack.Screen name="trips/[tripId]/members" options={{ title: 'Members' }} />
+        <Stack.Screen name="trips/[tripId]/invite" options={{ title: 'Invite' }} />
+        <Stack.Screen name="trips/[tripId]/settings" options={{ title: 'Settings' }} />
+        <Stack.Screen name="invite/[token]" options={{ title: 'Invitation' }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       </Stack>
     </AppProviders>
