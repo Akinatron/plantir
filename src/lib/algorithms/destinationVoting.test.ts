@@ -3,6 +3,26 @@ import { getDestinationWinner, rankDestinationProposals } from './destinationVot
 const proposals = [{ id: 'house-a' }, { id: 'house-b' }, { id: 'house-c' }];
 
 describe('destination voting algorithm', () => {
+  it('matches MVP single-choice voting: one member chooses one proposal', () => {
+    const results = rankDestinationProposals({
+      proposals: [{ id: 'villa' }, { id: 'cabin' }],
+      mode: 'upvote',
+      votes: [
+        { type: 'upvote', userId: 'u1', proposalId: 'villa' },
+        { type: 'upvote', userId: 'u2', proposalId: 'villa' },
+        { type: 'upvote', userId: 'u3', proposalId: 'cabin' },
+      ],
+    });
+
+    expect(results[0]).toMatchObject({
+      proposalId: 'villa',
+      voteCount: 2,
+      score: 2,
+      isWinner: true,
+      isTiedWinner: false,
+    });
+  });
+
   it('supports upvote voting', () => {
     const results = rankDestinationProposals({
       proposals,
