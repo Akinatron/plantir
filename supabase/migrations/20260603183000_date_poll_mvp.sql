@@ -46,7 +46,7 @@ on public.date_poll_required_members for select to authenticated
 using (
   exists (
     select 1 from public.polls p
-    where p.id = poll_id
+    where p.id = date_poll_required_members.poll_id
       and public.is_trip_member(p.trip_id, (select auth.uid()))
   )
 );
@@ -56,7 +56,7 @@ on public.date_poll_required_members for all to authenticated
 using (
   exists (
     select 1 from public.polls p
-    where p.id = poll_id
+    where p.id = date_poll_required_members.poll_id
       and p.type = 'date'
       and public.can_manage_trip(p.trip_id, (select auth.uid()))
       and not public.is_trip_read_only(p.trip_id)
@@ -65,7 +65,7 @@ using (
 with check (
   exists (
     select 1 from public.polls p
-    where p.id = poll_id
+    where p.id = date_poll_required_members.poll_id
       and p.type = 'date'
       and public.can_manage_trip(p.trip_id, (select auth.uid()))
       and not public.is_trip_read_only(p.trip_id)

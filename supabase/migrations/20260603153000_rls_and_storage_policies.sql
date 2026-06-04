@@ -446,7 +446,7 @@ on public.date_poll_allowed_ranges for select to authenticated
 using (
   exists (
     select 1 from public.polls p
-    where p.id = poll_id
+    where p.id = date_poll_allowed_ranges.poll_id
       and public.is_trip_member(p.trip_id, (select auth.uid()))
   )
 );
@@ -456,7 +456,7 @@ on public.date_poll_allowed_ranges for all to authenticated
 using (
   exists (
     select 1 from public.polls p
-    where p.id = poll_id
+    where p.id = date_poll_allowed_ranges.poll_id
       and public.can_manage_trip(p.trip_id, (select auth.uid()))
       and not public.is_trip_read_only(p.trip_id)
   )
@@ -464,7 +464,7 @@ using (
 with check (
   exists (
     select 1 from public.polls p
-    where p.id = poll_id
+    where p.id = date_poll_allowed_ranges.poll_id
       and p.type = 'date'
       and public.can_manage_trip(p.trip_id, (select auth.uid()))
       and not public.is_trip_read_only(p.trip_id)
@@ -476,7 +476,7 @@ on public.date_availability_votes for select to authenticated
 using (
   exists (
     select 1 from public.polls p
-    where p.id = poll_id
+    where p.id = date_availability_votes.poll_id
       and public.is_trip_member(p.trip_id, (select auth.uid()))
   )
 );
@@ -484,26 +484,35 @@ using (
 create policy "date_availability_votes_insert_own"
 on public.date_availability_votes for insert to authenticated
 with check (
-  user_id = (select auth.uid())
-  and public.can_vote_poll(poll_id, (select auth.uid()))
-  and exists (select 1 from public.polls p where p.id = poll_id and p.type = 'date')
+  date_availability_votes.user_id = (select auth.uid())
+  and public.can_vote_poll(date_availability_votes.poll_id, (select auth.uid()))
+  and exists (select 1 from public.polls p where p.id = date_availability_votes.poll_id and p.type = 'date')
 );
 
 create policy "date_availability_votes_update_own"
 on public.date_availability_votes for update to authenticated
-using (user_id = (select auth.uid()) and public.can_vote_poll(poll_id, (select auth.uid())))
-with check (user_id = (select auth.uid()) and public.can_vote_poll(poll_id, (select auth.uid())));
+using (
+  date_availability_votes.user_id = (select auth.uid())
+  and public.can_vote_poll(date_availability_votes.poll_id, (select auth.uid()))
+)
+with check (
+  date_availability_votes.user_id = (select auth.uid())
+  and public.can_vote_poll(date_availability_votes.poll_id, (select auth.uid()))
+);
 
 create policy "date_availability_votes_delete_own"
 on public.date_availability_votes for delete to authenticated
-using (user_id = (select auth.uid()) and public.can_vote_poll(poll_id, (select auth.uid())));
+using (
+  date_availability_votes.user_id = (select auth.uid())
+  and public.can_vote_poll(date_availability_votes.poll_id, (select auth.uid()))
+);
 
 create policy "date_poll_results_select_members"
 on public.date_poll_results for select to authenticated
 using (
   exists (
     select 1 from public.polls p
-    where p.id = poll_id
+    where p.id = date_poll_results.poll_id
       and public.is_trip_member(p.trip_id, (select auth.uid()))
   )
 );
@@ -515,13 +524,13 @@ using (public.is_trip_member(trip_id, (select auth.uid())));
 create policy "destination_proposals_insert_allowed_members"
 on public.destination_proposals for insert to authenticated
 with check (
-  created_by = (select auth.uid())
-  and poll_id is not null
-  and public.can_create_destination_proposal(poll_id, (select auth.uid()))
+  destination_proposals.created_by = (select auth.uid())
+  and destination_proposals.poll_id is not null
+  and public.can_create_destination_proposal(destination_proposals.poll_id, (select auth.uid()))
   and exists (
     select 1 from public.polls p
-    where p.id = poll_id
-      and p.trip_id = trip_id
+    where p.id = destination_proposals.poll_id
+      and p.trip_id = destination_proposals.trip_id
       and p.type = 'destination'
   )
 );
@@ -551,7 +560,7 @@ on public.destination_proposal_images for select to authenticated
 using (
   exists (
     select 1 from public.destination_proposals dp
-    where dp.id = proposal_id
+    where dp.id = destination_proposal_images.proposal_id
       and public.is_trip_member(dp.trip_id, (select auth.uid()))
   )
 );
@@ -559,10 +568,10 @@ using (
 create policy "destination_proposal_images_insert_creator_or_admin"
 on public.destination_proposal_images for insert to authenticated
 with check (
-  created_by = (select auth.uid())
+  destination_proposal_images.created_by = (select auth.uid())
   and exists (
     select 1 from public.destination_proposals dp
-    where dp.id = proposal_id
+    where dp.id = destination_proposal_images.proposal_id
       and dp.deleted_at is null
       and not public.is_trip_read_only(dp.trip_id)
       and (dp.created_by = (select auth.uid()) or public.is_trip_admin(dp.trip_id, (select auth.uid())))
@@ -574,7 +583,7 @@ on public.destination_proposal_images for update to authenticated
 using (
   exists (
     select 1 from public.destination_proposals dp
-    where dp.id = proposal_id
+    where dp.id = destination_proposal_images.proposal_id
       and not public.is_trip_read_only(dp.trip_id)
       and (dp.created_by = (select auth.uid()) or public.is_trip_admin(dp.trip_id, (select auth.uid())))
   )
@@ -582,7 +591,7 @@ using (
 with check (
   exists (
     select 1 from public.destination_proposals dp
-    where dp.id = proposal_id
+    where dp.id = destination_proposal_images.proposal_id
       and (dp.created_by = (select auth.uid()) or public.is_trip_admin(dp.trip_id, (select auth.uid())))
   )
 );
@@ -592,7 +601,7 @@ on public.destination_proposal_images for delete to authenticated
 using (
   exists (
     select 1 from public.destination_proposals dp
-    where dp.id = proposal_id
+    where dp.id = destination_proposal_images.proposal_id
       and not public.is_trip_read_only(dp.trip_id)
       and (dp.created_by = (select auth.uid()) or public.is_trip_admin(dp.trip_id, (select auth.uid())))
   )
@@ -605,29 +614,38 @@ using (public.is_trip_member(trip_id, (select auth.uid())));
 create policy "destination_votes_insert_own_single_choice"
 on public.destination_votes for insert to authenticated
 with check (
-  user_id = (select auth.uid())
-  and public.can_vote_poll(poll_id, (select auth.uid()))
+  destination_votes.user_id = (select auth.uid())
+  and public.can_vote_poll(destination_votes.poll_id, (select auth.uid()))
   and exists (
     select 1
     from public.polls p
-    join public.destination_proposals dp on dp.id = proposal_id
-    where p.id = poll_id
+    join public.destination_proposals dp on dp.id = destination_votes.proposal_id
+    where p.id = destination_votes.poll_id
       and p.type = 'destination'
-      and p.trip_id = trip_id
-      and dp.trip_id = trip_id
-      and dp.poll_id = poll_id
+      and p.trip_id = destination_votes.trip_id
+      and dp.trip_id = destination_votes.trip_id
+      and dp.poll_id = destination_votes.poll_id
       and dp.deleted_at is null
   )
 );
 
 create policy "destination_votes_update_own"
 on public.destination_votes for update to authenticated
-using (user_id = (select auth.uid()) and public.can_vote_poll(poll_id, (select auth.uid())))
-with check (user_id = (select auth.uid()) and public.can_vote_poll(poll_id, (select auth.uid())));
+using (
+  destination_votes.user_id = (select auth.uid())
+  and public.can_vote_poll(destination_votes.poll_id, (select auth.uid()))
+)
+with check (
+  destination_votes.user_id = (select auth.uid())
+  and public.can_vote_poll(destination_votes.poll_id, (select auth.uid()))
+);
 
 create policy "destination_votes_delete_own"
 on public.destination_votes for delete to authenticated
-using (user_id = (select auth.uid()) and public.can_vote_poll(poll_id, (select auth.uid())));
+using (
+  destination_votes.user_id = (select auth.uid())
+  and public.can_vote_poll(destination_votes.poll_id, (select auth.uid()))
+);
 
 create policy "tasks_select_members"
 on public.tasks for select to authenticated
@@ -910,4 +928,3 @@ comment on function public.can_vote_poll(uuid, uuid) is 'RLS helper: members can
 comment on function public.can_create_destination_proposal(uuid, uuid) is 'RLS helper: enforces destination poll state, membership, trip setting, and read-only state.';
 comment on function public.can_manage_expense(uuid, uuid) is 'RLS helper: expense creator or trip admin can manage active expenses while trip is writable.';
 comment on function public.can_create_initial_owner_membership(uuid, uuid, public.trip_member_role, public.trip_member_status) is 'RLS bootstrap helper for creating the owner membership immediately after trip insertion.';
-comment on table storage.buckets is 'Plantir uses private buckets. Access is controlled through storage.objects policies and path conventions.';

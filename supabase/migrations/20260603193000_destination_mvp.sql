@@ -79,7 +79,7 @@ on public.destination_poll_results for select to authenticated
 using (
   exists (
     select 1 from public.polls p
-    where p.id = poll_id
+    where p.id = destination_poll_results.poll_id
       and public.is_trip_member(p.trip_id, (select auth.uid()))
   )
 );
