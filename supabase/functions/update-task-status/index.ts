@@ -82,7 +82,7 @@ Deno.serve(async (request) => {
         trip_id: task.trip_id,
         actor_user_id: userId,
         actor_type: 'user',
-        event_type: 'task_status_changed',
+        event_type: task.status === 'done' ? 'task_completed' : 'task_status_changed',
         metadata: {
           task_id: task.id,
           title: task.title,

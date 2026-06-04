@@ -176,7 +176,7 @@ async function closePollAndTrip(
     trip_id: tripId,
     actor_user_id: userId,
     actor_type: 'user',
-    event_type: 'destination_poll_closed',
+    event_type: 'destination_chosen',
     metadata: {
       poll_id: pollId,
       proposal_id: proposal.id,

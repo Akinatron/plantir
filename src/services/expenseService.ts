@@ -1,5 +1,6 @@
 import { buildExpenseSplits } from '../lib/algorithms/expenses';
 import { getSupabaseClient } from '../lib/supabase/client';
+import { logTripActivity, sendTripNotification } from './notificationService';
 import {
   MarkSettlementPaidFormValues,
   ParsedCreateExpenseFormValues,
@@ -132,6 +133,32 @@ export async function createExpense(values: ParsedCreateExpenseFormValues): Prom
     throw new Error(splitError.message);
   }
 
+  await logNonBlocking(() =>
+    logTripActivity({
+      tripId: expenseRow.trip_id,
+      eventType: 'expense_created',
+      metadata: {
+        expense_id: expenseRow.id,
+        title: expenseRow.title,
+        amount_cents: expenseRow.amount_cents,
+        currency_code: expenseRow.currency_code,
+      },
+    }),
+  );
+  await logNonBlocking(() =>
+    sendTripNotification({
+      tripId: expenseRow.trip_id,
+      eventType: 'new_expense',
+      title: 'New expense',
+      body: expenseRow.title,
+      metadata: {
+        expense_id: expenseRow.id,
+        amount_cents: expenseRow.amount_cents,
+        currency_code: expenseRow.currency_code,
+      },
+    }),
+  );
+
   return mapExpenseRow(expenseRow);
 }
 
@@ -208,7 +235,32 @@ export async function markSettlementPaid(values: MarkSettlementPaidFormValues): 
     throw new Error('Settlement payment function returned no data.');
   }
 
-  return mapSettlementPaymentRow(data.payment);
+  const payment = mapSettlementPaymentRow(data.payment);
+  await logNonBlocking(() =>
+    sendTripNotification({
+      tripId: payment.tripId,
+      eventType: 'settlement_marked_paid',
+      title: 'Settlement marked paid',
+      body: `${payment.currencyCode} ${payment.amountCents} was marked paid.`,
+      targetUserIds: [payment.fromUserId, payment.toUserId],
+      metadata: {
+        payment_id: payment.id,
+        suggestion_id: payment.suggestionId,
+        amount_cents: payment.amountCents,
+        currency_code: payment.currencyCode,
+      },
+    }),
+  );
+
+  return payment;
+}
+
+async function logNonBlocking(work: () => Promise<void>): Promise<void> {
+  try {
+    await work();
+  } catch {
+    // Activity and notifications should not undo the primary user action.
+  }
 }
 
 async function listExpensePayers(expenseId: string) {

@@ -92,7 +92,7 @@ async function closePollAndTrip(
     trip_id: tripId,
     actor_user_id: userId,
     actor_type: 'user',
-    event_type: 'date_poll_closed',
+    event_type: 'date_chosen',
     metadata: {
       poll_id: pollId,
       result_id: winner.id,

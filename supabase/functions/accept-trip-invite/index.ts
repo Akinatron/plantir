@@ -107,7 +107,7 @@ Deno.serve(async (request) => {
       trip_id: invite.trip_id,
       actor_user_id: userId,
       actor_type: 'user',
-      event_type: 'trip_member_joined',
+      event_type: 'member_joined',
       metadata: {
         invite_id: invite.id,
       },

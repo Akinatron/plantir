@@ -1,6 +1,7 @@
 import { decode } from 'base64-arraybuffer';
 
 import { getSupabaseClient } from '../lib/supabase/client';
+import { logTripActivity, sendTripNotification } from './notificationService';
 import {
   CloseDestinationPollFormValues,
   DestinationSetupFormValues,
@@ -182,6 +183,30 @@ export async function createDestinationProposal(
     });
   }
 
+  await logNonBlocking(() =>
+    logTripActivity({
+      tripId: proposal.tripId,
+      eventType: 'destination_proposal_created',
+      metadata: {
+        proposal_id: proposal.id,
+        poll_id: proposal.pollId,
+        title: proposal.title,
+      },
+    }),
+  );
+  await logNonBlocking(() =>
+    sendTripNotification({
+      tripId: proposal.tripId,
+      eventType: 'new_proposal',
+      title: 'New proposal',
+      body: proposal.title,
+      metadata: {
+        proposal_id: proposal.id,
+        poll_id: proposal.pollId,
+      },
+    }),
+  );
+
   return proposal;
 }
 
@@ -249,6 +274,18 @@ export async function voteForDestinationProposal(values: DestinationVoteFormValu
   if (error) {
     throw new Error(error.message);
   }
+
+  await logNonBlocking(() =>
+    logTripActivity({
+      tripId: data.trip_id,
+      eventType: 'destination_vote_submitted',
+      metadata: {
+        poll_id: data.poll_id,
+        proposal_id: data.proposal_id,
+        user_id: data.user_id,
+      },
+    }),
+  );
 
   return mapDestinationVoteRow(data);
 }
@@ -322,6 +359,20 @@ export async function closeDestinationPoll(
     throw new Error('Close destination poll function returned no data.');
   }
 
+  const proposal = await getDestinationProposal(data.winner.proposal_id);
+  await logNonBlocking(() =>
+    sendTripNotification({
+      tripId: data.tripId,
+      eventType: 'place_chosen',
+      title: 'Place chosen',
+      body: proposal?.title ?? 'The destination vote is closed.',
+      metadata: {
+        proposal_id: data.winner.proposal_id,
+        result_id: data.winner.id,
+      },
+    }),
+  );
+
   return {
     tripId: data.tripId,
     winner: mapDestinationPollResultRow(data.winner),
@@ -377,5 +428,13 @@ async function uploadProposalImage(input: {
 
   if (imageError) {
     throw new Error(imageError.message);
+  }
+}
+
+async function logNonBlocking(work: () => Promise<void>): Promise<void> {
+  try {
+    await work();
+  } catch {
+    // Activity and notifications should not undo the primary user action.
   }
 }

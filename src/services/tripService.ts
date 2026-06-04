@@ -1,4 +1,5 @@
 import { getSupabaseClient } from '../lib/supabase/client';
+import { logTripActivity } from './notificationService';
 import { CreateTripFormValues, TripSettingsFormValues } from '../lib/validation/trip';
 import { Trip, TripMember, TripMemberRow, TripRow, mapTripMemberRow, mapTripRow } from '../types/trip';
 
@@ -66,6 +67,16 @@ export async function createTrip(userId: string, values: CreateTripFormValues): 
   if (memberError) {
     throw new Error(memberError.message);
   }
+
+  await logNonBlocking(() =>
+    logTripActivity({
+      tripId: tripRow.id,
+      eventType: 'trip_created',
+      metadata: {
+        title: tripRow.title,
+      },
+    }),
+  );
 
   return mapTripRow(tripRow);
 }
@@ -142,4 +153,12 @@ export function getTripNextAction(trip: Trip): string {
   }
 
   return 'Continue planning the trip.';
+}
+
+async function logNonBlocking(work: () => Promise<void>): Promise<void> {
+  try {
+    await work();
+  } catch {
+    // Activity is useful audit context, but it should not undo the primary user action.
+  }
 }

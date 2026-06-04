@@ -1,4 +1,5 @@
 import { getSupabaseClient } from '../lib/supabase/client';
+import { sendTripNotification } from './notificationService';
 import {
   ParsedCreatePackingItemFormValues,
   ParsedCreatePlanningNoteFormValues,
@@ -58,7 +59,26 @@ export async function createTask(values: ParsedCreateTaskFormValues): Promise<Ta
     throw new Error('Task function returned no data.');
   }
 
-  return mapTaskRow(data.task);
+  const task = mapTaskRow(data.task);
+
+  if (task.assignedTo && task.assignedTo !== task.createdBy) {
+    const assignedUserId = task.assignedTo;
+    await logNonBlocking(() =>
+      sendTripNotification({
+        tripId: task.tripId,
+        eventType: 'task_assigned',
+        title: 'Task assigned',
+        body: task.title,
+        targetUserIds: [assignedUserId],
+        metadata: {
+          task_id: task.id,
+          title: task.title,
+        },
+      }),
+    );
+  }
+
+  return task;
 }
 
 export async function updateTaskStatus(values: UpdateTaskStatusFormValues): Promise<Task> {
@@ -208,4 +228,12 @@ export function buildPlanningSummary(tasks: Task[], packingItems: PackingListIte
     missingItems: packingItems.filter((item) => !item.isPacked).length,
     overdueTasks: openTasks.filter((task) => task.dueAt !== null && Date.parse(task.dueAt) < now).length,
   };
+}
+
+async function logNonBlocking(work: () => Promise<void>): Promise<void> {
+  try {
+    await work();
+  } catch {
+    // Notifications should not undo the primary user action.
+  }
 }

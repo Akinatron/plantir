@@ -77,7 +77,7 @@ Deno.serve(async (request) => {
       trip_id: suggestion.trip_id,
       actor_user_id: userId,
       actor_type: 'user',
-      event_type: 'settlement_payment_marked_paid',
+      event_type: 'settlement_marked_paid',
       metadata: {
         payment_id: payment.id,
         suggestion_id: suggestion.id,

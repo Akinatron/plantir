@@ -1,4 +1,5 @@
 import { getSupabaseClient } from '../lib/supabase/client';
+import { logTripActivity, sendTripNotification } from './notificationService';
 import { DatePollSetupFormValues, DatePollVoteFormValues, datePollSetupSchema, datePollVoteSchema } from '../lib/validation/datePoll';
 import {
   DateAvailabilityVote,
@@ -118,6 +119,18 @@ export async function createDatePoll(userId: string, values: DatePollSetupFormVa
     throw new Error(tripError.message);
   }
 
+  await logNonBlocking(() =>
+    logTripActivity({
+      tripId: parsed.tripId,
+      eventType: 'date_poll_created',
+      metadata: {
+        poll_id: pollRow.id,
+        starts_on: parsed.allowedStartDate,
+        ends_on: parsed.allowedEndDate,
+      },
+    }),
+  );
+
   return mapDatePollRow(pollRow);
 }
 
@@ -165,6 +178,7 @@ export async function saveDatePollVotes(values: DatePollVoteFormValues): Promise
   }
 
   if (rows.length === 0) {
+    await logDateVoteSubmitted(parsed.pollId, parsed.userId, 0);
     return [];
   }
 
@@ -177,6 +191,8 @@ export async function saveDatePollVotes(values: DatePollVoteFormValues): Promise
   if (error) {
     throw new Error(error.message);
   }
+
+  await logDateVoteSubmitted(parsed.pollId, parsed.userId, rows.length);
 
   return (data ?? []).map(mapDateAvailabilityVoteRow);
 }
@@ -230,10 +246,57 @@ export async function closeDatePoll(pollId: string): Promise<{ tripId: string; w
     throw new Error('Close date poll function returned no data.');
   }
 
+  await logNonBlocking(() =>
+    sendTripNotification({
+      tripId: data.tripId,
+      eventType: 'date_chosen',
+      title: 'Date chosen',
+      body: `The trip dates are ${data.winner.starts_on} to ${data.winner.ends_on}.`,
+      metadata: {
+        result_id: data.winner.id,
+        starts_on: data.winner.starts_on,
+        ends_on: data.winner.ends_on,
+      },
+    }),
+  );
+
   return {
     tripId: data.tripId,
     winner: mapDatePollResultRow(data.winner),
   };
+}
+
+async function logDateVoteSubmitted(pollId: string, userId: string, voteCount: number): Promise<void> {
+  const supabase = getSupabaseClient();
+  const { data, error } = await supabase
+    .from('polls')
+    .select('trip_id')
+    .eq('id', pollId)
+    .maybeSingle<{ trip_id: string }>();
+
+  if (error || !data) {
+    return;
+  }
+
+  await logNonBlocking(() =>
+    logTripActivity({
+      tripId: data.trip_id,
+      eventType: 'date_vote_submitted',
+      metadata: {
+        poll_id: pollId,
+        user_id: userId,
+        vote_count: voteCount,
+      },
+    }),
+  );
+}
+
+async function logNonBlocking(work: () => Promise<void>): Promise<void> {
+  try {
+    await work();
+  } catch {
+    // Activity and notifications should not undo the primary user action.
+  }
 }
 
 async function listAllowedRanges(pollId: string): Promise<DatePollAllowedRange[]> {

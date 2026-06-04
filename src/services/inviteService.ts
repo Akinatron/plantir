@@ -1,6 +1,7 @@
 import * as Linking from 'expo-linking';
 
 import { getSupabaseClient } from '../lib/supabase/client';
+import { sendTripNotification } from './notificationService';
 import { CreateInviteFormValues } from '../lib/validation/trip';
 import { TripInvite, TripInviteRow, mapTripInviteRow } from '../types/trip';
 
@@ -95,5 +96,28 @@ export async function acceptTripInvite(token: string): Promise<AcceptInviteResul
     throw new Error('Invite function returned no data.');
   }
 
+  if (data.status === 'joined' && data.tripId) {
+    const joinedTripId = data.tripId;
+    await notifyNonBlocking(() =>
+      sendTripNotification({
+        tripId: joinedTripId,
+        eventType: 'member_joined',
+        title: 'Someone joined',
+        body: 'A new member joined the trip.',
+        metadata: {
+          status: data.status,
+        },
+      }),
+    );
+  }
+
   return data;
+}
+
+async function notifyNonBlocking(work: () => Promise<void>): Promise<void> {
+  try {
+    await work();
+  } catch {
+    // Notifications should not undo the primary user action.
+  }
 }
