@@ -6,13 +6,17 @@ import { LoadingState } from '../../../src/components/feedback/LoadingState';
 import { AppText } from '../../../src/components/ui/AppText';
 import { Button } from '../../../src/components/ui/Button';
 import { Screen } from '../../../src/components/ui/Screen';
+import { useAuth } from '../../../src/features/auth/AuthProvider';
+import { usePlanningSummaryQuery } from '../../../src/hooks/usePlanning';
 import { useTripMembersQuery, useTripQuery } from '../../../src/hooks/useTrips';
 import { getTripNextAction } from '../../../src/services/tripService';
 
 export default function TripDashboardScreen() {
   const { tripId } = useLocalSearchParams<{ tripId: string }>();
+  const { user } = useAuth();
   const tripQuery = useTripQuery(tripId);
   const membersQuery = useTripMembersQuery(tripId);
+  const planningSummaryQuery = usePlanningSummaryQuery(tripId, user?.id);
 
   if (tripQuery.isLoading) {
     return (
@@ -57,6 +61,14 @@ export default function TripDashboardScreen() {
           {membersQuery.error ? <AppText>{membersQuery.error.message}</AppText> : null}
         </View>
 
+        <View style={styles.panel}>
+          <AppText variant="eyebrow">Planning</AppText>
+          <AppText variant="subtitle">{planningSummaryQuery.data?.pendingTasks ?? 0} pending tasks</AppText>
+          <AppText>{planningSummaryQuery.data?.assignedToMe ?? 0} assigned to me</AppText>
+          <AppText>{planningSummaryQuery.data?.missingItems ?? 0} missing packing items</AppText>
+          {planningSummaryQuery.error ? <AppText>{planningSummaryQuery.error.message}</AppText> : null}
+        </View>
+
         <View style={styles.actions}>
           <Link href={`/trips/${trip.id}/date-poll/setup`} asChild>
             <Button label="Set up date poll" />
@@ -72,6 +84,12 @@ export default function TripDashboardScreen() {
           </Link>
           <Link href={`/trips/${trip.id}/destination`} asChild>
             <Button label="View proposals" variant="secondary" />
+          </Link>
+          <Link href={`/trips/${trip.id}/plan`} asChild>
+            <Button label="Trip plan" variant="secondary" />
+          </Link>
+          <Link href={`/trips/${trip.id}/plan/tasks`} asChild>
+            <Button label="Tasks" variant="secondary" />
           </Link>
           <Link href={`/trips/${trip.id}/expenses`} asChild>
             <Button label="Expenses" variant="secondary" />
