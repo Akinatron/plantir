@@ -1,9 +1,10 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 
+import { Sentry } from '../src/lib/observability/sentry';
 import { AppProviders } from '../src/providers/AppProviders';
 
-export default function RootLayout() {
+function RootLayout() {
   return (
     <AppProviders>
       <StatusBar style="dark" />
@@ -43,3 +44,5 @@ export default function RootLayout() {
     </AppProviders>
   );
 }
+
+export default Sentry.wrap(RootLayout);

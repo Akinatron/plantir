@@ -8,9 +8,11 @@
     "scheme": "plantir",
     "userInterfaceStyle": "light",
     "ios": {
+      "bundleIdentifier": "com.akinatron.plantir",
       "supportsTablet": true
     },
     "android": {
+      "package": "com.akinatron.plantir",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -25,7 +27,8 @@
     "plugins": [
       "expo-router",
       "expo-secure-store",
-      "expo-notifications"
+      "expo-notifications",
+      "@sentry/react-native"
     ]
   }
 }
