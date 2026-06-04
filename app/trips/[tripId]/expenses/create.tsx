@@ -7,6 +7,7 @@ import { InlineNotice } from '../../../../src/components/feedback/InlineNotice';
 import { LoadingState } from '../../../../src/components/feedback/LoadingState';
 import { AppText } from '../../../../src/components/ui/AppText';
 import { Button } from '../../../../src/components/ui/Button';
+import { CalendarDateField } from '../../../../src/components/ui/CalendarDateField';
 import { Screen } from '../../../../src/components/ui/Screen';
 import { TextField } from '../../../../src/components/ui/TextField';
 import { useAuth } from '../../../../src/features/auth/AuthProvider';
@@ -149,13 +150,12 @@ export default function CreateExpenseScreen() {
           <Controller
             control={control}
             name="expenseDate"
-            render={({ field: { onBlur, onChange, value } }) => (
-              <TextField
+            render={({ field: { onChange, value } }) => (
+              <CalendarDateField
                 label="Paid date"
-                placeholder="2026-07-01"
-                onBlur={onBlur}
-                onChangeText={onChange}
                 value={value}
+                onChange={(nextDate) => onChange(nextDate ?? '')}
+                allowClear={false}
                 error={errors.expenseDate?.message}
               />
             )}

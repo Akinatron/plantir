@@ -8,6 +8,7 @@ import { InlineNotice } from '../../../../src/components/feedback/InlineNotice';
 import { LoadingState } from '../../../../src/components/feedback/LoadingState';
 import { AppText } from '../../../../src/components/ui/AppText';
 import { Button } from '../../../../src/components/ui/Button';
+import { CalendarDateField, CalendarDateTimeField } from '../../../../src/components/ui/CalendarDateField';
 import { Screen } from '../../../../src/components/ui/Screen';
 import { TextField } from '../../../../src/components/ui/TextField';
 import { useAuth } from '../../../../src/features/auth/AuthProvider';
@@ -86,13 +87,12 @@ export default function DatePollSetupScreen() {
           <Controller
             control={control}
             name="allowedStartDate"
-            render={({ field: { onBlur, onChange, value } }) => (
-              <TextField
+            render={({ field: { onChange, value } }) => (
+              <CalendarDateField
                 label="Allowed start date"
-                placeholder="2026-07-01"
-                onBlur={onBlur}
-                onChangeText={onChange}
                 value={value}
+                onChange={(nextDate) => onChange(nextDate ?? '')}
+                allowClear={false}
                 error={errors.allowedStartDate?.message}
               />
             )}
@@ -100,13 +100,12 @@ export default function DatePollSetupScreen() {
           <Controller
             control={control}
             name="allowedEndDate"
-            render={({ field: { onBlur, onChange, value } }) => (
-              <TextField
+            render={({ field: { onChange, value } }) => (
+              <CalendarDateField
                 label="Allowed end date"
-                placeholder="2026-07-10"
-                onBlur={onBlur}
-                onChangeText={onChange}
                 value={value}
+                onChange={(nextDate) => onChange(nextDate ?? '')}
+                allowClear={false}
                 error={errors.allowedEndDate?.message}
               />
             )}
@@ -157,14 +156,11 @@ export default function DatePollSetupScreen() {
           <Controller
             control={control}
             name="votingDeadlineAt"
-            render={({ field: { onBlur, onChange, value } }) => (
-              <TextField
+            render={({ field: { onChange, value } }) => (
+              <CalendarDateTimeField
                 label="Voting deadline"
-                placeholder="2026-07-01T12:00:00.000Z"
-                autoCapitalize="none"
-                onBlur={onBlur}
-                onChangeText={(text) => onChange(text.trim().length > 0 ? text : null)}
                 value={value ?? ''}
+                onChange={onChange}
                 error={errors.votingDeadlineAt?.message}
               />
             )}

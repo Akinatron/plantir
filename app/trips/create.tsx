@@ -6,6 +6,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { InlineNotice } from '../../src/components/feedback/InlineNotice';
 import { AppText } from '../../src/components/ui/AppText';
 import { Button } from '../../src/components/ui/Button';
+import { CalendarDateField } from '../../src/components/ui/CalendarDateField';
 import { Screen } from '../../src/components/ui/Screen';
 import { TextField } from '../../src/components/ui/TextField';
 import { useAuth } from '../../src/features/auth/AuthProvider';
@@ -90,6 +91,30 @@ export default function CreateTripScreen() {
                 onChangeText={onChange}
                 value={value}
                 error={errors.timezone?.message}
+              />
+            )}
+          />
+          <Controller
+            control={control}
+            name="startsOn"
+            render={({ field: { onChange, value } }) => (
+              <CalendarDateField
+                label="Start date"
+                value={value}
+                onChange={onChange}
+                error={errors.startsOn?.message}
+              />
+            )}
+          />
+          <Controller
+            control={control}
+            name="endsOn"
+            render={({ field: { onChange, value } }) => (
+              <CalendarDateField
+                label="End date"
+                value={value}
+                onChange={onChange}
+                error={errors.endsOn?.message}
               />
             )}
           />

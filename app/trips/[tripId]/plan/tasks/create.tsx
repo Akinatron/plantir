@@ -7,6 +7,7 @@ import { InlineNotice } from '../../../../../src/components/feedback/InlineNotic
 import { LoadingState } from '../../../../../src/components/feedback/LoadingState';
 import { AppText } from '../../../../../src/components/ui/AppText';
 import { Button } from '../../../../../src/components/ui/Button';
+import { CalendarDateTimeField } from '../../../../../src/components/ui/CalendarDateField';
 import { Screen } from '../../../../../src/components/ui/Screen';
 import { TextField } from '../../../../../src/components/ui/TextField';
 import { useAuth } from '../../../../../src/features/auth/AuthProvider';
@@ -97,13 +98,11 @@ export default function CreateTaskScreen() {
           <Controller
             control={control}
             name="dueAt"
-            render={({ field: { onBlur, onChange, value } }) => (
-              <TextField
-                label="Due date/time"
-                placeholder="2026-07-01T10:00:00Z"
-                onBlur={onBlur}
-                onChangeText={(text) => onChange(text)}
+            render={({ field: { onChange, value } }) => (
+              <CalendarDateTimeField
+                label="Due date"
                 value={value ?? ''}
+                onChange={onChange}
                 error={errors.dueAt?.message}
               />
             )}

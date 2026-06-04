@@ -9,6 +9,7 @@ import { LoadingState } from '../../../src/components/feedback/LoadingState';
 import { PlaceholderState } from '../../../src/components/feedback/PlaceholderState';
 import { AppText } from '../../../src/components/ui/AppText';
 import { Button } from '../../../src/components/ui/Button';
+import { CalendarDateTimeField } from '../../../src/components/ui/CalendarDateField';
 import { Card } from '../../../src/components/ui/Card';
 import { PageHeader } from '../../../src/components/ui/PageHeader';
 import { Screen } from '../../../src/components/ui/Screen';
@@ -89,14 +90,11 @@ export default function InviteScreen() {
               <Controller
                 control={control}
                 name="expiresAt"
-                render={({ field: { onBlur, onChange, value } }) => (
-                  <TextField
+                render={({ field: { onChange, value } }) => (
+                  <CalendarDateTimeField
                     label="Expires at"
-                    placeholder="2026-07-01T12:00:00.000Z"
-                    autoCapitalize="none"
-                    onBlur={onBlur}
-                    onChangeText={(text) => onChange(text.trim().length > 0 ? text : null)}
                     value={value ?? ''}
+                    onChange={onChange}
                     error={errors.expiresAt?.message}
                   />
                 )}
