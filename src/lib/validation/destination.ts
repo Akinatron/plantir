@@ -5,7 +5,8 @@ import { normalizeCurrencyCode, parseMoneyToCents } from '../algorithms/money';
 const optionalUrlSchema = z
   .string()
   .trim()
-  .url('Use a valid URL.')
+  .transform((value) => normalizeOptionalUrl(value))
+  .pipe(z.string().url('Use a valid URL.').nullable())
   .nullable();
 
 const nullableNonNegativeNumberFromText = z
@@ -94,7 +95,11 @@ export const closeDestinationPollSchema = z.object({
 });
 
 export const fetchLinkMetadataSchema = z.object({
-  url: z.string().trim().url(),
+  url: z
+    .string()
+    .trim()
+    .transform((value) => normalizeOptionalUrl(value))
+    .pipe(z.string().url()),
 });
 
 export type DestinationSetupFormValues = z.infer<typeof destinationSetupSchema>;
@@ -109,4 +114,18 @@ function splitLines(value: string): string[] {
     .map((item) => item.trim())
     .filter(Boolean)
     .slice(0, 12);
+}
+
+function normalizeOptionalUrl(value: string | null): string | null {
+  if (!value) {
+    return null;
+  }
+
+  const trimmed = value.trim();
+
+  if (!trimmed) {
+    return null;
+  }
+
+  return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
 }

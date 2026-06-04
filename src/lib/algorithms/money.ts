@@ -157,11 +157,11 @@ export function sumAllocations(allocations: readonly Allocation[]): number {
 }
 
 export function parseMoneyToCents(value: string): number {
-  const trimmed = value.trim();
+  const trimmed = value.trim().replace(',', '.');
   const match = /^(-?)(\d+)(?:\.(\d{1,2}))?$/.exec(trimmed);
 
   if (!match) {
-    throw new Error('Money value must be a decimal string with at most two decimal places.');
+    throw new Error('Money value must be a whole number or decimal with at most two decimal places.');
   }
 
   const sign = match[1] === '-' ? -1 : 1;

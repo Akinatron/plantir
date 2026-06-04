@@ -39,7 +39,9 @@ describe('money algorithms', () => {
   });
 
   it('parses and formats money without floating point input', () => {
+    expect(parseMoneyToCents('542')).toBe(54200);
     expect(parseMoneyToCents('12.30')).toBe(1230);
+    expect(parseMoneyToCents('12,30')).toBe(1230);
     expect(parseMoneyToCents('-0.05')).toBe(-5);
     expect(formatCents(-1230, 'eur')).toBe('-12.30 EUR');
   });

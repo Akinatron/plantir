@@ -37,6 +37,34 @@ describe('destination validation', () => {
     });
   });
 
+  it('accepts common URL and money input formats', () => {
+    expect(
+      destinationProposalSchema.parse({
+        tripId,
+        pollId,
+        title: 'Hotel',
+        url: 'www.booking.com',
+        description: null,
+        locationName: null,
+        totalPriceCents: '542',
+        currencyCode: 'eur',
+        pricePerPersonCents: '52,40',
+        capacity: '2',
+        bedrooms: null,
+        bathrooms: null,
+        pros: '',
+        cons: '',
+        imageBase64: null,
+        imageContentType: null,
+        imageFileExtension: null,
+      }),
+    ).toMatchObject({
+      url: 'https://www.booking.com',
+      totalPriceCents: 54200,
+      pricePerPersonCents: 5240,
+    });
+  });
+
   it('requires currency when a price is set', () => {
     expect(() =>
       destinationProposalSchema.parse({
