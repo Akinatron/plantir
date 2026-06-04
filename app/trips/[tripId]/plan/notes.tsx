@@ -1,5 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useLocalSearchParams } from 'expo-router';
+import { useEffect } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { FlatList, StyleSheet, View } from 'react-native';
 
@@ -28,6 +29,7 @@ export default function NotesScreen() {
     control,
     handleSubmit,
     reset,
+    setValue,
     formState: { errors },
   } = useForm<CreatePlanningNoteFormValues, unknown, ParsedCreatePlanningNoteFormValues>({
     resolver: zodResolver(createPlanningNoteSchema),
@@ -39,6 +41,12 @@ export default function NotesScreen() {
       pinned: false,
     },
   });
+
+  useEffect(() => {
+    if (user?.id) {
+      setValue('createdBy', user.id, { shouldValidate: true });
+    }
+  }, [setValue, user?.id]);
 
   if (notesQuery.isLoading) {
     return (

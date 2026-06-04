@@ -1,5 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useLocalSearchParams } from 'expo-router';
+import { useEffect } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 
@@ -49,6 +50,12 @@ export default function PackingScreen() {
     },
   });
   const assignedTo = useWatch({ control, name: 'assignedTo' });
+
+  useEffect(() => {
+    if (user?.id) {
+      setValue('createdBy', user.id, { shouldValidate: true });
+    }
+  }, [setValue, user?.id]);
 
   if (itemsQuery.isLoading || membersQuery.isLoading) {
     return (

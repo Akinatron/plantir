@@ -1,5 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useEffect, useMemo } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
@@ -50,6 +51,27 @@ export default function CreateExpenseScreen() {
   const paidByUserId = useWatch({ control, name: 'paidByUserId' });
   const excludedUserIds = useWatch({ control, name: 'excludedUserIds' });
 
+  useEffect(() => {
+    if (user?.id) {
+      setValue('createdBy', user.id, { shouldValidate: true });
+    }
+  }, [setValue, user?.id]);
+
+  const members = useMemo(() => membersQuery.data ?? [], [membersQuery.data]);
+  const participantIds = useMemo(() => members.map((member) => member.userId), [members]);
+
+  useEffect(() => {
+    if (paidByUserId || members.length === 0) {
+      return;
+    }
+
+    const fallbackPayer = members.find((member) => member.userId === user?.id) ?? members[0];
+
+    if (fallbackPayer) {
+      setValue('paidByUserId', fallbackPayer.userId, { shouldDirty: true, shouldValidate: true });
+    }
+  }, [members, paidByUserId, setValue, user?.id]);
+
   if (membersQuery.isLoading) {
     return (
       <Screen>
@@ -57,9 +79,6 @@ export default function CreateExpenseScreen() {
       </Screen>
     );
   }
-
-  const members = membersQuery.data ?? [];
-  const participantIds = members.map((member) => member.userId);
 
   const onSubmit = handleSubmit(async (values) => {
     const expense = await createMutation.mutateAsync({
