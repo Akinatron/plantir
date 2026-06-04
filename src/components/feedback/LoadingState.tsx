@@ -8,8 +8,8 @@ type LoadingStateProps = {
 
 export function LoadingState({ label }: LoadingStateProps) {
   return (
-    <View style={styles.container}>
-      <ActivityIndicator color="#0F6B57" />
+    <View style={styles.container} accessible accessibilityRole="progressbar" accessibilityLabel={label}>
+      <ActivityIndicator color="#0F6B57" accessibilityLabel={label} />
       <AppText>{label}</AppText>
     </View>
   );

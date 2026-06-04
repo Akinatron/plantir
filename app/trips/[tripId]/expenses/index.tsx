@@ -65,10 +65,14 @@ export default function ExpensesListScreen() {
 function ExpenseRow({ expense, tripId }: { expense: Expense; tripId: string }) {
   return (
     <Link href={`/trips/${tripId}/expenses/${expense.id}`} asChild>
-      <Pressable style={styles.card}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`Open expense ${expense.title}, ${formatCents(expense.amountCents, expense.currencyCode)}`}
+        style={({ pressed }) => [styles.card, pressed && styles.pressed]}
+      >
         <AppText variant="subtitle">{expense.title}</AppText>
         <AppText>{formatCents(expense.amountCents, expense.currencyCode)}</AppText>
-        <AppText>{expense.expenseDate}{expense.category ? ` · ${expense.category}` : ''}</AppText>
+        <AppText>{expense.expenseDate}{expense.category ? ` / ${expense.category}` : ''}</AppText>
       </Pressable>
     </Link>
   );
@@ -93,5 +97,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     gap: 8,
     padding: 16,
+  },
+  pressed: {
+    opacity: 0.82,
   },
 });

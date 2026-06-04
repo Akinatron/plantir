@@ -13,6 +13,7 @@ export function TextField({ label, error, style, ...props }: TextFieldProps) {
       <AppText variant="eyebrow">{label}</AppText>
       <TextInput
         {...props}
+        accessibilityLabel={props.accessibilityLabel ?? label}
         placeholderTextColor="#98A2B3"
         style={[styles.input, error && styles.inputError, style]}
       />

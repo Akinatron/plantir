@@ -92,6 +92,8 @@ export default function PackingScreen() {
             {toggleMutation.error ? (
               <InlineNotice title="Item update failed" message={toggleMutation.error.message} tone="error" />
             ) : null}
+            {createMutation.isSuccess ? <InlineNotice title="Item added" tone="success" /> : null}
+            {toggleMutation.isSuccess ? <InlineNotice title="List updated" tone="success" /> : null}
             <View style={styles.form}>
               <Controller
                 control={control}
@@ -188,7 +190,14 @@ function PackingItemCard({
   const assignee = members.find((member) => member.userId === item.assignedTo);
 
   return (
-    <Pressable disabled={disabled} onPress={onToggle} style={[styles.card, item.isPacked && styles.cardDone]}>
+    <Pressable
+      accessibilityRole="checkbox"
+      accessibilityLabel={`${item.label}, quantity ${item.quantity}`}
+      accessibilityState={{ checked: item.isPacked, disabled }}
+      disabled={disabled}
+      onPress={onToggle}
+      style={[styles.card, item.isPacked && styles.cardDone]}
+    >
       <View style={styles.cardHeader}>
         <AppText variant="subtitle">{item.label}</AppText>
         <AppText>{item.isPacked ? 'Packed' : 'Missing'}</AppText>

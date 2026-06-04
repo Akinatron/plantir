@@ -9,7 +9,7 @@ type PlaceholderStateProps = {
 
 export function PlaceholderState({ title, description }: PlaceholderStateProps) {
   return (
-    <View style={styles.container}>
+    <View style={styles.container} accessible accessibilityLabel={`${title}. ${description}`}>
       <AppText variant="subtitle" style={styles.centered}>
         {title}
       </AppText>
@@ -26,6 +26,8 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 10,
     justifyContent: 'center',
+    minHeight: 160,
+    paddingVertical: 24,
   },
   centered: {
     textAlign: 'center',

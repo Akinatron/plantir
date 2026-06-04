@@ -6,6 +6,7 @@ import { LoadingState } from '../../src/components/feedback/LoadingState';
 import { PlaceholderState } from '../../src/components/feedback/PlaceholderState';
 import { AppText } from '../../src/components/ui/AppText';
 import { Button } from '../../src/components/ui/Button';
+import { PageHeader } from '../../src/components/ui/PageHeader';
 import { Screen } from '../../src/components/ui/Screen';
 import { useAuth } from '../../src/features/auth/AuthProvider';
 import { useTripsQuery } from '../../src/hooks/useTrips';
@@ -35,7 +36,7 @@ export default function TripsTabScreen() {
     return (
       <Screen>
         <View style={styles.centered}>
-          <PlaceholderState title="Log in to see trips" description="Trips are linked to your account." />
+          <PlaceholderState title="Log in to see trips" description="Your trips are private to your account." />
           <Link href="/login" asChild>
             <Button label="Log in" />
           </Link>
@@ -55,10 +56,7 @@ export default function TripsTabScreen() {
   return (
     <Screen>
       <View style={styles.header}>
-        <View>
-          <AppText variant="eyebrow">Trips</AppText>
-          <AppText variant="title">Your trips</AppText>
-        </View>
+        <PageHeader eyebrow="Trips" title="Your trips" />
         <Link href="/trips/create" asChild>
           <Button label="New trip" />
         </Link>
@@ -73,10 +71,15 @@ export default function TripsTabScreen() {
         data={tripsQuery.data ?? []}
         keyExtractor={(trip) => trip.id}
         ListEmptyComponent={
-          <PlaceholderState
-            title="No trips yet"
-            description="Create a trip, invite friends, and start planning."
-          />
+          <View style={styles.empty}>
+            <PlaceholderState
+              title="No trips yet"
+              description="Create a trip, invite the group, and make the first decision together."
+            />
+            <Link href="/trips/create" asChild>
+              <Button label="Create your first trip" />
+            </Link>
+          </View>
         }
         renderItem={({ item }) => <TripListItem trip={item} />}
       />
@@ -87,7 +90,11 @@ export default function TripsTabScreen() {
 function TripListItem({ trip }: { trip: Trip }) {
   return (
     <Link href={`/trips/${trip.id}`} asChild>
-      <Pressable style={styles.card}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`Open ${trip.title}. Status: ${formatStatus(trip.status)}`}
+        style={({ pressed }) => [styles.card, pressed && styles.pressed]}
+      >
         <AppText variant="subtitle">{trip.title}</AppText>
         <AppText>{formatStatus(trip.status)}</AppText>
       </Pressable>
@@ -112,12 +119,19 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingBottom: 24,
   },
+  empty: {
+    gap: 16,
+  },
   card: {
     backgroundColor: '#FFFFFF',
     borderColor: '#EAECF0',
     borderRadius: 8,
     borderWidth: 1,
     gap: 8,
+    minHeight: 72,
     padding: 16,
+  },
+  pressed: {
+    opacity: 0.82,
   },
 });

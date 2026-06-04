@@ -39,7 +39,7 @@ export default function ExpenseDetailScreen() {
           <AppText variant="eyebrow">Expense</AppText>
           <AppText variant="title">{expense.title}</AppText>
           <AppText>{formatCents(expense.amountCents, expense.currencyCode)}</AppText>
-          <AppText>{expense.expenseDate}{expense.category ? ` · ${expense.category}` : ''}</AppText>
+          <AppText>{expense.expenseDate}{expense.category ? ` / ${expense.category}` : ''}</AppText>
         </View>
 
         {expense.description ? <AppText>{expense.description}</AppText> : null}

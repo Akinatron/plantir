@@ -78,6 +78,7 @@ export default function NotesScreen() {
             {createMutation.error ? (
               <InlineNotice title="Note failed to save" message={createMutation.error.message} tone="error" />
             ) : null}
+            {createMutation.isSuccess ? <InlineNotice title="Note added" tone="success" /> : null}
             <View style={styles.form}>
               <Controller
                 control={control}

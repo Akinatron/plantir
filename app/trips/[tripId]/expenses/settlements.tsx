@@ -6,6 +6,7 @@ import { LoadingState } from '../../../../src/components/feedback/LoadingState';
 import { PlaceholderState } from '../../../../src/components/feedback/PlaceholderState';
 import { AppText } from '../../../../src/components/ui/AppText';
 import { Button } from '../../../../src/components/ui/Button';
+import { Card } from '../../../../src/components/ui/Card';
 import { Screen } from '../../../../src/components/ui/Screen';
 import {
   useComputeTripBalancesMutation,
@@ -15,6 +16,7 @@ import {
 } from '../../../../src/hooks/useExpenses';
 import { useTripMembersQuery } from '../../../../src/hooks/useTrips';
 import { formatCents } from '../../../../src/lib/algorithms/money';
+import { confirmAction } from '../../../../src/lib/ui/confirmAction';
 import { SettlementSuggestion } from '../../../../src/types/expense';
 
 export default function SettlementsScreen() {
@@ -75,7 +77,14 @@ export default function SettlementsScreen() {
             suggestion={item}
             fromName={memberName(membersQuery.data ?? [], item.fromUserId)}
             toName={memberName(membersQuery.data ?? [], item.toUserId)}
-            onMarkPaid={() => markPaidMutation.mutate({ suggestionId: item.id })}
+            onMarkPaid={() =>
+              confirmAction({
+                title: 'Mark settlement paid?',
+                message: 'This records a completed payment and updates current balances. It does not delete the original expenses.',
+                confirmLabel: 'Mark paid',
+                onConfirm: () => markPaidMutation.mutate({ suggestionId: item.id }),
+              })
+            }
             disabled={markPaidMutation.isPending}
           />
         )}
@@ -98,13 +107,13 @@ function SettlementRow({
   disabled: boolean;
 }) {
   return (
-    <View style={styles.card}>
+    <Card>
       <AppText variant="subtitle">
         {fromName} pays {toName}
       </AppText>
       <AppText>{formatCents(suggestion.amountCents, suggestion.currencyCode)}</AppText>
       <Button label="Mark paid" variant="secondary" onPress={onMarkPaid} disabled={disabled} />
-    </View>
+    </Card>
   );
 }
 
@@ -120,13 +129,5 @@ const styles = StyleSheet.create({
   list: {
     gap: 12,
     paddingBottom: 24,
-  },
-  card: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#EAECF0',
-    borderRadius: 8,
-    borderWidth: 1,
-    gap: 8,
-    padding: 16,
   },
 });

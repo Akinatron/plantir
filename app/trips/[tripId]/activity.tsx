@@ -7,6 +7,7 @@ import { PlaceholderState } from '../../../src/components/feedback/PlaceholderSt
 import { AppText } from '../../../src/components/ui/AppText';
 import { Screen } from '../../../src/components/ui/Screen';
 import { useTripActivityQuery } from '../../../src/hooks/useNotifications';
+import { formatCents } from '../../../src/lib/algorithms/money';
 import { ActivityLogEvent } from '../../../src/types/notification';
 
 export default function TripActivityScreen() {
@@ -98,7 +99,7 @@ function activityDetail(event: ActivityLogEvent): string | null {
   const currency = metadata.currency_code;
 
   if (typeof amount === 'number' && typeof currency === 'string') {
-    return `${currency} ${amount}`;
+    return formatCents(amount, currency);
   }
 
   return null;

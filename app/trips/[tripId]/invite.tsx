@@ -6,8 +6,11 @@ import { FlatList, StyleSheet, View } from 'react-native';
 
 import { InlineNotice } from '../../../src/components/feedback/InlineNotice';
 import { LoadingState } from '../../../src/components/feedback/LoadingState';
+import { PlaceholderState } from '../../../src/components/feedback/PlaceholderState';
 import { AppText } from '../../../src/components/ui/AppText';
 import { Button } from '../../../src/components/ui/Button';
+import { Card } from '../../../src/components/ui/Card';
+import { PageHeader } from '../../../src/components/ui/PageHeader';
 import { Screen } from '../../../src/components/ui/Screen';
 import { TextField } from '../../../src/components/ui/TextField';
 import {
@@ -15,6 +18,7 @@ import {
   useRevokeTripInviteMutation,
   useTripInvitesQuery,
 } from '../../../src/hooks/useInvites';
+import { confirmAction } from '../../../src/lib/ui/confirmAction';
 import { CreateInviteFormValues, createInviteSchema } from '../../../src/lib/validation/trip';
 import { TripInvite } from '../../../src/types/trip';
 
@@ -55,11 +59,11 @@ export default function InviteScreen() {
       <FlatList
         ListHeaderComponent={
           <View style={styles.content}>
-            <View style={styles.header}>
-              <AppText variant="eyebrow">Invite</AppText>
-              <AppText variant="title">Share the trip</AppText>
-              <AppText>Invite links can expire by time, number of uses, or both.</AppText>
-            </View>
+            <PageHeader
+              eyebrow="Invite"
+              title="Share the trip"
+              description="Invite links can expire by time, number of uses, or both."
+            />
 
             {createInviteMutation.error ? (
               <InlineNotice
@@ -124,10 +128,21 @@ export default function InviteScreen() {
         contentContainerStyle={styles.list}
         data={invitesQuery.data ?? []}
         keyExtractor={(invite) => invite.id}
+        ListEmptyComponent={
+          <PlaceholderState title="No active links" description="Create an invite link when you are ready to share access." />
+        }
         renderItem={({ item }) => (
           <InviteRow
             invite={item}
-            onRevoke={() => revokeInviteMutation.mutate(item.id)}
+            onRevoke={() =>
+              confirmAction({
+                title: 'Revoke invite?',
+                message: 'This link will stop working immediately. Members who already joined will keep access.',
+                confirmLabel: 'Revoke',
+                destructive: true,
+                onConfirm: () => revokeInviteMutation.mutate(item.id),
+              })
+            }
             isRevoking={revokeInviteMutation.isPending}
           />
         )}
@@ -146,14 +161,14 @@ function InviteRow({
   isRevoking: boolean;
 }) {
   return (
-    <View style={styles.card}>
+    <Card>
       <AppText variant="subtitle">{invite.revokedAt ? 'Revoked invite' : 'Active invite'}</AppText>
       <AppText>Uses: {invite.useCount}{invite.maxUses === null ? '' : ` / ${invite.maxUses}`}</AppText>
       <AppText>Expires: {invite.expiresAt ?? 'No time limit'}</AppText>
       {!invite.revokedAt ? (
-        <Button label="Revoke" variant="secondary" onPress={onRevoke} disabled={isRevoking} />
+        <Button label="Revoke" variant="danger" onPress={onRevoke} disabled={isRevoking} />
       ) : null}
-    </View>
+    </Card>
   );
 }
 
@@ -162,22 +177,11 @@ const styles = StyleSheet.create({
     gap: 18,
     paddingTop: 24,
   },
-  header: {
-    gap: 8,
-  },
   form: {
     gap: 14,
   },
   list: {
     gap: 12,
     paddingBottom: 24,
-  },
-  card: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#EAECF0',
-    borderRadius: 8,
-    borderWidth: 1,
-    gap: 8,
-    padding: 16,
   },
 });

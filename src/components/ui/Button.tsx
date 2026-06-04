@@ -1,7 +1,7 @@
 import { ElementRef, forwardRef } from 'react';
 import { Pressable, PressableProps, StyleSheet, Text } from 'react-native';
 
-type ButtonVariant = 'primary' | 'secondary';
+type ButtonVariant = 'primary' | 'secondary' | 'danger';
 
 type ButtonProps = PressableProps & {
   label: string;
@@ -14,7 +14,9 @@ export const Button = forwardRef<ElementRef<typeof Pressable>, ButtonProps>(
       <Pressable
         ref={ref}
         accessibilityRole="button"
+        accessibilityLabel={props.accessibilityLabel ?? label}
         {...props}
+        hitSlop={props.hitSlop ?? 6}
         style={({ pressed }) => [
           styles.base,
           styles[variant],
@@ -23,7 +25,9 @@ export const Button = forwardRef<ElementRef<typeof Pressable>, ButtonProps>(
           typeof style === 'function' ? style({ pressed }) : style,
         ]}
       >
-        <Text style={[styles.label, variant === 'secondary' && styles.secondaryLabel]}>{label}</Text>
+        <Text style={[styles.label, variant !== 'primary' && styles.secondaryLabel, variant === 'danger' && styles.dangerLabel]}>
+          {label}
+        </Text>
       </Pressable>
     );
   },
@@ -46,6 +50,11 @@ const styles = StyleSheet.create({
   secondary: {
     backgroundColor: '#E7F4EF',
   },
+  danger: {
+    backgroundColor: '#FEF3F2',
+    borderColor: '#FDA29B',
+    borderWidth: 1,
+  },
   pressed: {
     opacity: 0.82,
   },
@@ -59,5 +68,8 @@ const styles = StyleSheet.create({
   },
   secondaryLabel: {
     color: '#0F6B57',
+  },
+  dangerLabel: {
+    color: '#B42318',
   },
 });

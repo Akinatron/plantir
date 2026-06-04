@@ -45,6 +45,7 @@ export default function TasksScreen() {
             {statusMutation.error ? (
               <InlineNotice title="Task update failed" message={statusMutation.error.message} tone="error" />
             ) : null}
+            {statusMutation.isSuccess ? <InlineNotice title="Task updated" tone="success" /> : null}
             <Link href={`/trips/${tripId}/plan/tasks/create`} asChild>
               <Button label="Create task" />
             </Link>
@@ -93,6 +94,9 @@ function TaskCard({
         {statuses.map((status) => (
           <Pressable
             key={status}
+            accessibilityRole="button"
+            accessibilityLabel={`Set ${task.title} to ${status.replace('_', ' ')}`}
+            accessibilityState={{ disabled: disabled || task.status === status, selected: task.status === status }}
             disabled={disabled || task.status === status}
             onPress={() => onStatusChange(status)}
             style={[styles.statusButton, task.status === status && styles.statusButtonActive]}
@@ -136,9 +140,12 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   statusButton: {
+    alignItems: 'center',
     borderColor: '#D0D5DD',
     borderRadius: 8,
     borderWidth: 1,
+    justifyContent: 'center',
+    minHeight: 44,
     paddingHorizontal: 10,
     paddingVertical: 8,
   },

@@ -6,6 +6,7 @@ import { LoadingState } from '../../../../src/components/feedback/LoadingState';
 import { PlaceholderState } from '../../../../src/components/feedback/PlaceholderState';
 import { AppText } from '../../../../src/components/ui/AppText';
 import { Button } from '../../../../src/components/ui/Button';
+import { Card } from '../../../../src/components/ui/Card';
 import { Screen } from '../../../../src/components/ui/Screen';
 import {
   useCloseDatePollMutation,
@@ -13,6 +14,7 @@ import {
   useDatePollBundleQuery,
   useDatePollResultsQuery,
 } from '../../../../src/hooks/useDatePoll';
+import { confirmAction } from '../../../../src/lib/ui/confirmAction';
 import { DatePollResult } from '../../../../src/types/datePoll';
 
 export default function DatePollResultsScreen() {
@@ -40,8 +42,13 @@ export default function DatePollResultsScreen() {
     );
   }
 
-  const closePoll = async () => {
-    await closeMutation.mutateAsync(poll.id);
+  const closePoll = () => {
+    confirmAction({
+      title: 'Close date poll?',
+      message: 'The app will save the top ranked date range and move the trip to date decided.',
+      confirmLabel: 'Close poll',
+      onConfirm: () => closeMutation.mutate(poll.id),
+    });
   };
 
   return (
@@ -51,9 +58,7 @@ export default function DatePollResultsScreen() {
           <View style={styles.header}>
             <AppText variant="eyebrow">Date results</AppText>
             <AppText variant="title">Best date ranges</AppText>
-            <AppText>
-              Results are ranked by the approved deterministic rules. Closing the poll saves the top result.
-            </AppText>
+            <AppText>Results are ranked automatically. Closing the poll saves the top result for the trip.</AppText>
 
             {poll.status === 'closed' && winner ? (
               <InlineNotice
@@ -93,7 +98,7 @@ export default function DatePollResultsScreen() {
                 label={closeMutation.isPending ? 'Closing...' : 'Close poll and save winner'}
                 variant="secondary"
                 onPress={closePoll}
-                disabled={closeMutation.isPending || poll.status === 'closed'}
+                disabled={closeMutation.isPending || poll.status === 'closed' || !winner}
               />
             </View>
           </View>
@@ -103,8 +108,8 @@ export default function DatePollResultsScreen() {
         keyExtractor={(result) => result.id}
         ListEmptyComponent={
           <PlaceholderState
-            title="No results yet"
-            description="Compute results after members have saved availability."
+            title="No date votes yet"
+            description="Ask members to save availability, then compute results."
           />
         }
         renderItem={({ item }) => <ResultRow result={item} />}
@@ -115,7 +120,7 @@ export default function DatePollResultsScreen() {
 
 function ResultRow({ result }: { result: DatePollResult }) {
   return (
-    <View style={[styles.card, result.isWinner && styles.winnerCard]}>
+    <Card selected={result.isWinner}>
       <View style={styles.rowHeader}>
         <AppText variant="subtitle">
           #{result.rank} {result.startDate} to {result.endDate}
@@ -128,14 +133,14 @@ function ResultRow({ result }: { result: DatePollResult }) {
         {Math.round(result.availablePercentage * 100)}%)
       </AppText>
       <AppText>
-        Prefer: {result.preferredMemberCount} · Maybe: {result.maybeMemberCount} · Unavailable:{' '}
-        {result.unavailableMemberCount} · Pending: {result.pendingMemberCount}
+        Prefer: {result.preferredMemberCount} / Maybe: {result.maybeMemberCount} / Unavailable:{' '}
+        {result.unavailableMemberCount} / Pending: {result.pendingMemberCount}
       </AppText>
       {result.requiredMembersMissingCount > 0 ? (
         <AppText>Required missing: {result.requiredMembersMissingCount}</AppText>
       ) : null}
       <AppText>Score: {result.score}</AppText>
-    </View>
+    </Card>
   );
 }
 
@@ -150,17 +155,6 @@ const styles = StyleSheet.create({
   list: {
     gap: 12,
     paddingBottom: 24,
-  },
-  card: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#EAECF0',
-    borderRadius: 8,
-    borderWidth: 1,
-    gap: 8,
-    padding: 16,
-  },
-  winnerCard: {
-    borderColor: '#0F6B57',
   },
   rowHeader: {
     gap: 6,

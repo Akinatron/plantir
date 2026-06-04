@@ -6,6 +6,7 @@ import { LoadingState } from '../../../../src/components/feedback/LoadingState';
 import { PlaceholderState } from '../../../../src/components/feedback/PlaceholderState';
 import { AppText } from '../../../../src/components/ui/AppText';
 import { Button } from '../../../../src/components/ui/Button';
+import { Card } from '../../../../src/components/ui/Card';
 import { Screen } from '../../../../src/components/ui/Screen';
 import {
   useCloseDestinationPollMutation,
@@ -13,6 +14,7 @@ import {
   useDestinationBundleQuery,
   useDestinationResultsQuery,
 } from '../../../../src/hooks/useDestination';
+import { confirmAction } from '../../../../src/lib/ui/confirmAction';
 import { DestinationPollResult, DestinationProposal } from '../../../../src/types/destination';
 
 export default function DestinationResultsScreen() {
@@ -44,9 +46,16 @@ export default function DestinationResultsScreen() {
   }
 
   const closePoll = (selectedProposalId: string | null) => {
-    closeMutation.mutate({
-      pollId: poll.id,
-      selectedProposalId,
+    const proposalTitle = selectedProposalId ? getProposalTitle(proposals, selectedProposalId) : 'the top ranked proposal';
+    confirmAction({
+      title: 'Close destination vote?',
+      message: `This saves ${proposalTitle} as the selected accommodation.`,
+      confirmLabel: 'Close vote',
+      onConfirm: () =>
+        closeMutation.mutate({
+          pollId: poll.id,
+          selectedProposalId,
+        }),
     });
   };
 
@@ -57,7 +66,7 @@ export default function DestinationResultsScreen() {
           <View style={styles.header}>
             <AppText variant="eyebrow">Destination results</AppText>
             <AppText variant="title">Voting ranking</AppText>
-            <AppText>Single-choice vote count decides the winner. Owner/admin resolves only tied proposals.</AppText>
+            <AppText>Each member gets one vote. Vote count decides the winner; ties require owner/admin selection.</AppText>
 
             {poll.status === 'closed' && winner ? (
               <InlineNotice
@@ -90,7 +99,7 @@ export default function DestinationResultsScreen() {
                   label={closeMutation.isPending ? 'Closing...' : 'Close poll and save winner'}
                   variant="secondary"
                   onPress={() => closePoll(null)}
-                  disabled={closeMutation.isPending || poll.status === 'closed'}
+                  disabled={closeMutation.isPending || poll.status === 'closed' || results.length === 0}
                 />
               ) : null}
             </View>
@@ -131,7 +140,7 @@ function ResultRow({
   proposalTitle: string;
 }) {
   return (
-    <View style={[styles.card, (result.isWinner || result.isTiedWinner) && styles.winnerCard]}>
+    <Card selected={result.isWinner || result.isTiedWinner}>
       <AppText variant="subtitle">
         #{result.rank} {proposalTitle}
       </AppText>
@@ -140,7 +149,7 @@ function ResultRow({
       </AppText>
       {result.isWinner ? <AppText>Winner</AppText> : null}
       {result.isTiedWinner ? <AppText>Tied winner</AppText> : null}
-    </View>
+    </Card>
   );
 }
 
@@ -162,16 +171,5 @@ const styles = StyleSheet.create({
   list: {
     gap: 12,
     paddingBottom: 24,
-  },
-  card: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#EAECF0',
-    borderRadius: 8,
-    borderWidth: 1,
-    gap: 8,
-    padding: 16,
-  },
-  winnerCard: {
-    borderColor: '#0F6B57',
   },
 });

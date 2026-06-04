@@ -174,6 +174,8 @@ function VoteDayRow({
           <Pressable
             key={option.value}
             accessibilityRole="button"
+            accessibilityLabel={`${day}: ${option.label}`}
+            accessibilityState={{ disabled, selected: selectedStatus === option.value }}
             disabled={disabled}
             onPress={() => onSelect(option.value)}
             style={[
@@ -213,9 +215,12 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   option: {
+    alignItems: 'center',
     borderColor: '#D0D5DD',
     borderRadius: 8,
     borderWidth: 1,
+    justifyContent: 'center',
+    minHeight: 44,
     paddingHorizontal: 12,
     paddingVertical: 10,
   },

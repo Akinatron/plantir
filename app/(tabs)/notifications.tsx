@@ -156,12 +156,24 @@ function NotificationCard({
       <AppText>{notification.body}</AppText>
       <View style={styles.actionRow}>
         {unread ? (
-          <Pressable disabled={disabled} onPress={onRead} style={styles.textButton}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Mark ${notification.title} as read`}
+            disabled={disabled}
+            onPress={onRead}
+            style={styles.textButton}
+          >
             <AppText style={styles.textButtonLabel}>Mark read</AppText>
           </Pressable>
         ) : null}
         {notification.status !== 'dismissed' ? (
-          <Pressable disabled={disabled} onPress={onDismiss} style={styles.textButton}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Dismiss ${notification.title}`}
+            disabled={disabled}
+            onPress={onDismiss}
+            style={styles.textButton}
+          >
             <AppText style={styles.textButtonLabel}>Dismiss</AppText>
           </Pressable>
         ) : null}
@@ -215,9 +227,12 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   textButton: {
+    alignItems: 'center',
     borderColor: '#D0D5DD',
     borderRadius: 8,
     borderWidth: 1,
+    justifyContent: 'center',
+    minHeight: 44,
     paddingHorizontal: 10,
     paddingVertical: 8,
   },

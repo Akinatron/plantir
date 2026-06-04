@@ -3,7 +3,10 @@ import { FlatList, StyleSheet, View } from 'react-native';
 
 import { InlineNotice } from '../../../src/components/feedback/InlineNotice';
 import { LoadingState } from '../../../src/components/feedback/LoadingState';
+import { PlaceholderState } from '../../../src/components/feedback/PlaceholderState';
 import { AppText } from '../../../src/components/ui/AppText';
+import { Card } from '../../../src/components/ui/Card';
+import { PageHeader } from '../../../src/components/ui/PageHeader';
 import { Screen } from '../../../src/components/ui/Screen';
 import { useTripMembersQuery } from '../../../src/hooks/useTrips';
 import { TripMember } from '../../../src/types/trip';
@@ -23,8 +26,7 @@ export default function MembersScreen() {
   return (
     <Screen>
       <View style={styles.header}>
-        <AppText variant="eyebrow">Members</AppText>
-        <AppText variant="title">Trip group</AppText>
+        <PageHeader eyebrow="Members" title="Trip group" description="Everyone listed here can see this trip." />
       </View>
 
       {membersQuery.error ? (
@@ -35,6 +37,9 @@ export default function MembersScreen() {
         contentContainerStyle={styles.list}
         data={membersQuery.data ?? []}
         keyExtractor={(member) => member.id}
+        ListEmptyComponent={
+          <PlaceholderState title="No members yet" description="Create or share an invite link to bring people in." />
+        }
         renderItem={({ item }) => <MemberRow member={item} />}
       />
     </Screen>
@@ -43,13 +48,17 @@ export default function MembersScreen() {
 
 function MemberRow({ member }: { member: TripMember }) {
   return (
-    <View style={styles.row}>
+    <Card
+      accessible
+      accessibilityLabel={`${member.displayName ?? 'Unnamed member'}, ${member.role}`}
+      style={styles.row}
+    >
       <View>
         <AppText variant="subtitle">{member.displayName ?? 'Unnamed member'}</AppText>
-        <AppText>{member.userId}</AppText>
+        <AppText>{member.role === 'owner' ? 'Owns this trip' : member.role === 'admin' ? 'Can manage trip settings' : 'Can plan and vote'}</AppText>
       </View>
       <AppText variant="eyebrow">{member.role}</AppText>
-    </View>
+    </Card>
   );
 }
 
@@ -63,13 +72,8 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
   row: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#EAECF0',
-    borderRadius: 8,
-    borderWidth: 1,
     flexDirection: 'row',
     justifyContent: 'space-between',
     gap: 12,
-    padding: 16,
   },
 });

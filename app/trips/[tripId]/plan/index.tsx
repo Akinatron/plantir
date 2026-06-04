@@ -5,7 +5,10 @@ import { InlineNotice } from '../../../../src/components/feedback/InlineNotice';
 import { LoadingState } from '../../../../src/components/feedback/LoadingState';
 import { AppText } from '../../../../src/components/ui/AppText';
 import { Button } from '../../../../src/components/ui/Button';
+import { Card } from '../../../../src/components/ui/Card';
+import { PageHeader } from '../../../../src/components/ui/PageHeader';
 import { Screen } from '../../../../src/components/ui/Screen';
+import { StatTile } from '../../../../src/components/ui/StatTile';
 import { useAuth } from '../../../../src/features/auth/AuthProvider';
 import {
   usePackingItemsQuery,
@@ -38,23 +41,20 @@ export default function TripPlanScreen() {
   return (
     <Screen>
       <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.header}>
-          <AppText variant="eyebrow">Planning</AppText>
-          <AppText variant="title">Trip plan</AppText>
-        </View>
+        <PageHeader eyebrow="Planning" title="Trip plan" description="Keep the practical details visible after the big decisions are made." />
 
         {summaryQuery.error ? (
           <InlineNotice title="Plan failed to load" message={summaryQuery.error.message} tone="error" />
         ) : null}
 
         <View style={styles.summaryGrid}>
-          <SummaryCard label="Pending tasks" value={summary?.pendingTasks ?? 0} />
-          <SummaryCard label="Assigned to me" value={summary?.assignedToMe ?? 0} />
-          <SummaryCard label="Missing items" value={summary?.missingItems ?? 0} />
-          <SummaryCard label="Overdue" value={summary?.overdueTasks ?? 0} />
+          <StatTile label="Pending tasks" value={summary?.pendingTasks ?? 0} />
+          <StatTile label="Assigned to me" value={summary?.assignedToMe ?? 0} />
+          <StatTile label="Missing items" value={summary?.missingItems ?? 0} />
+          <StatTile label="Overdue" value={summary?.overdueTasks ?? 0} />
         </View>
 
-        <View style={styles.panel}>
+        <Card>
           <AppText variant="eyebrow">Before the trip</AppText>
           {missingTasks.length === 0 && missingItems.length === 0 ? (
             <AppText>No open tasks or missing packing items.</AppText>
@@ -65,13 +65,13 @@ export default function TripPlanScreen() {
           {missingItems.map((item) => (
             <AppText key={item.id}>Pack: {item.label}</AppText>
           ))}
-        </View>
+        </Card>
 
-        <View style={styles.panel}>
+        <Card>
           <AppText variant="eyebrow">Files</AppText>
           <AppText>{fileCount} shared file{fileCount === 1 ? '' : 's'} in trip storage.</AppText>
           {filesQuery.error ? <AppText>{filesQuery.error.message}</AppText> : null}
-        </View>
+        </Card>
 
         <View style={styles.actions}>
           <Link href={`/trips/${tripId}/plan/tasks`} asChild>
@@ -95,44 +95,15 @@ export default function TripPlanScreen() {
   );
 }
 
-function SummaryCard({ label, value }: { label: string; value: number }) {
-  return (
-    <View style={styles.summaryCard}>
-      <AppText variant="title">{value}</AppText>
-      <AppText>{label}</AppText>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   content: {
     gap: 18,
     paddingVertical: 24,
   },
-  header: {
-    gap: 8,
-  },
   summaryGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 10,
-  },
-  summaryCard: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#EAECF0',
-    borderRadius: 8,
-    borderWidth: 1,
-    flexBasis: '47%',
-    gap: 6,
-    padding: 14,
-  },
-  panel: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#EAECF0',
-    borderRadius: 8,
-    borderWidth: 1,
-    gap: 8,
-    padding: 16,
   },
   actions: {
     gap: 12,

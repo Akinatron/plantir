@@ -12,7 +12,12 @@ type InlineNoticeProps = {
 
 export function InlineNotice({ title, message, tone = 'info' }: InlineNoticeProps) {
   return (
-    <View style={[styles.container, styles[tone]]}>
+    <View
+      style={[styles.container, styles[tone]]}
+      accessibilityRole={tone === 'error' ? 'alert' : 'summary'}
+      accessibilityLiveRegion={tone === 'error' ? 'assertive' : 'polite'}
+      accessible
+    >
       <AppText variant="eyebrow" style={styles.title}>
         {title}
       </AppText>
