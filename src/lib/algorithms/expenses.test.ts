@@ -164,6 +164,32 @@ describe('expense algorithms', () => {
     ]);
   });
 
+  it('produces final balances that sum to zero per currency', () => {
+    const balances = computeBalances({
+      memberIds: ['a', 'b', 'c'],
+      expenses: [
+        {
+          id: 'e1',
+          kind: 'expense',
+          amountCents: 1200,
+          currencyCode: 'EUR',
+          payers: [{ memberId: 'a', amountCents: 1200 }],
+          split: { type: 'equal', participantIds: ['a', 'b', 'c'] },
+        },
+        {
+          id: 'e2',
+          kind: 'expense',
+          amountCents: 300,
+          currencyCode: 'EUR',
+          payers: [{ memberId: 'b', amountCents: 300 }],
+          split: { type: 'equal', participantIds: ['a', 'b', 'c'] },
+        },
+      ],
+    });
+
+    expect(balances.reduce((sum, balance) => sum + balance.balanceCents, 0)).toBe(0);
+  });
+
   it('rejects payer totals that do not match the expense amount', () => {
     expect(() =>
       computeBalances({

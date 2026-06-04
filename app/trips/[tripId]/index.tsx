@@ -73,6 +73,12 @@ export default function TripDashboardScreen() {
           <Link href={`/trips/${trip.id}/destination`} asChild>
             <Button label="View proposals" variant="secondary" />
           </Link>
+          <Link href={`/trips/${trip.id}/expenses`} asChild>
+            <Button label="Expenses" variant="secondary" />
+          </Link>
+          <Link href={`/trips/${trip.id}/expenses/balances`} asChild>
+            <Button label="Balances" variant="secondary" />
+          </Link>
           <Link href={`/trips/${trip.id}/invite`} asChild>
             <Button label="Invite friends" variant="secondary" />
           </Link>
