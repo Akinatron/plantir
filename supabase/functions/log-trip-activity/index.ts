@@ -3,6 +3,7 @@ import { authenticateRequest, createServiceClient } from '../_shared/supabase.ts
 
 const allowedEvents = new Set([
   'trip_created',
+  'trip_confirmed',
   'member_joined',
   'date_poll_created',
   'date_vote_submitted',

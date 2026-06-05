@@ -31,10 +31,18 @@ export default function TripSettingsScreen() {
       timezone: 'UTC',
       memberCanCreateProposals: true,
       memberCanCreateExpenses: true,
+      memberCanSeeDateResults: true,
+      memberCanSeePlaceResults: true,
+      memberCanModifyPlaceFields: false,
+      settlementMarkPaidPolicy: 'participants',
     },
   });
   const memberCanCreateProposals = useWatch({ control, name: 'memberCanCreateProposals' });
   const memberCanCreateExpenses = useWatch({ control, name: 'memberCanCreateExpenses' });
+  const memberCanSeeDateResults = useWatch({ control, name: 'memberCanSeeDateResults' });
+  const memberCanSeePlaceResults = useWatch({ control, name: 'memberCanSeePlaceResults' });
+  const memberCanModifyPlaceFields = useWatch({ control, name: 'memberCanModifyPlaceFields' });
+  const settlementMarkPaidPolicy = useWatch({ control, name: 'settlementMarkPaidPolicy' });
 
   useEffect(() => {
     if (tripQuery.data) {
@@ -44,6 +52,10 @@ export default function TripSettingsScreen() {
         timezone: tripQuery.data.timezone,
         memberCanCreateProposals: tripQuery.data.memberCanCreateProposals,
         memberCanCreateExpenses: tripQuery.data.memberCanCreateExpenses,
+        memberCanSeeDateResults: tripQuery.data.memberCanSeeDateResults,
+        memberCanSeePlaceResults: tripQuery.data.memberCanSeePlaceResults,
+        memberCanModifyPlaceFields: tripQuery.data.memberCanModifyPlaceFields,
+        settlementMarkPaidPolicy: tripQuery.data.settlementMarkPaidPolicy,
       });
     }
   }, [reset, tripQuery.data]);
@@ -64,6 +76,10 @@ export default function TripSettingsScreen() {
       timezone: updated.timezone,
       memberCanCreateProposals: updated.memberCanCreateProposals,
       memberCanCreateExpenses: updated.memberCanCreateExpenses,
+      memberCanSeeDateResults: updated.memberCanSeeDateResults,
+      memberCanSeePlaceResults: updated.memberCanSeePlaceResults,
+      memberCanModifyPlaceFields: updated.memberCanModifyPlaceFields,
+      settlementMarkPaidPolicy: updated.settlementMarkPaidPolicy,
     });
   });
 
@@ -145,6 +161,46 @@ export default function TripSettingsScreen() {
             setValue('memberCanCreateExpenses', !memberCanCreateExpenses, {
               shouldDirty: true,
             })
+          }
+        />
+        <ToggleRow
+          label="Members can see date results"
+          value={memberCanSeeDateResults}
+          onToggle={() =>
+            setValue('memberCanSeeDateResults', !memberCanSeeDateResults, {
+              shouldDirty: true,
+            })
+          }
+        />
+        <ToggleRow
+          label="Members can see place results"
+          value={memberCanSeePlaceResults}
+          onToggle={() =>
+            setValue('memberCanSeePlaceResults', !memberCanSeePlaceResults, {
+              shouldDirty: true,
+            })
+          }
+        />
+        <ToggleRow
+          label="Members can edit place fields"
+          value={memberCanModifyPlaceFields}
+          onToggle={() =>
+            setValue('memberCanModifyPlaceFields', !memberCanModifyPlaceFields, {
+              shouldDirty: true,
+            })
+          }
+        />
+        <ToggleRow
+          label="Members can mark own settlements paid"
+          value={settlementMarkPaidPolicy === 'participants'}
+          onToggle={() =>
+            setValue(
+              'settlementMarkPaidPolicy',
+              settlementMarkPaidPolicy === 'participants' ? 'owner_admin_only' : 'participants',
+              {
+                shouldDirty: true,
+              },
+            )
           }
         />
 

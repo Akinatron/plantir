@@ -1,4 +1,9 @@
-import { destinationProposalSchema, destinationVoteSchema } from './destination';
+import {
+  destinationCustomFieldSchema,
+  destinationProposalSchema,
+  destinationVoteSchema,
+  upsertDestinationCustomFieldValuesSchema,
+} from './destination';
 
 describe('destination validation', () => {
   const tripId = '11111111-1111-4111-8111-111111111111';
@@ -98,5 +103,53 @@ describe('destination validation', () => {
         userId,
       }),
     ).toMatchObject({ proposalId });
+  });
+
+  it('accepts configured place custom fields', () => {
+    expect(
+      destinationCustomFieldSchema.parse({
+        tripId,
+        pollId,
+        name: 'Pool',
+        emoji: 'P',
+        fieldType: 'boolean',
+        showOnCard: true,
+        required: false,
+        sortOrder: 2,
+      }),
+    ).toMatchObject({
+      name: 'Pool',
+      fieldType: 'boolean',
+      showOnCard: true,
+    });
+  });
+
+  it('normalizes custom field values and rejects mixed typed values', () => {
+    expect(
+      upsertDestinationCustomFieldValuesSchema.parse({
+        proposalId,
+        values: [
+          {
+            fieldId: '55555555-5555-4555-8555-555555555555',
+            valueUrl: 'booking.com/hotel',
+          },
+        ],
+      }),
+    ).toMatchObject({
+      values: [{ valueUrl: 'https://booking.com/hotel' }],
+    });
+
+    expect(() =>
+      upsertDestinationCustomFieldValuesSchema.parse({
+        proposalId,
+        values: [
+          {
+            fieldId: '55555555-5555-4555-8555-555555555555',
+            valueText: 'Sea view',
+            valueNumber: 4,
+          },
+        ],
+      }),
+    ).toThrow('Custom field values can set only one typed value.');
   });
 });

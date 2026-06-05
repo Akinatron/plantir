@@ -11,6 +11,7 @@ export type TripStatus =
 
 export type TripMemberRole = 'owner' | 'admin' | 'member';
 export type TripMemberStatus = 'joined' | 'removed';
+export type SettlementMarkPaidPolicy = 'owner_admin_only' | 'participants';
 
 export type Trip = {
   id: string;
@@ -21,8 +22,15 @@ export type Trip = {
   status: TripStatus;
   startsOn: string | null;
   endsOn: string | null;
+  confirmedAt: string | null;
+  confirmedBy: string | null;
+  confirmedNote: string | null;
   memberCanCreateProposals: boolean;
   memberCanCreateExpenses: boolean;
+  memberCanSeeDateResults: boolean;
+  memberCanSeePlaceResults: boolean;
+  memberCanModifyPlaceFields: boolean;
+  settlementMarkPaidPolicy: SettlementMarkPaidPolicy;
   closedAt: string | null;
   createdAt: string;
   updatedAt: string;
@@ -37,8 +45,15 @@ export type TripRow = {
   status: TripStatus;
   starts_on: string | null;
   ends_on: string | null;
+  confirmed_at: string | null;
+  confirmed_by: string | null;
+  confirmed_note: string | null;
   member_can_create_proposals: boolean;
   member_can_create_expenses: boolean;
+  member_can_see_date_results: boolean;
+  member_can_see_place_results: boolean;
+  member_can_modify_place_fields: boolean;
+  settlement_mark_paid_policy: SettlementMarkPaidPolicy;
   closed_at: string | null;
   created_at: string;
   updated_at: string;
@@ -98,8 +113,15 @@ export function mapTripRow(row: TripRow): Trip {
     status: row.status,
     startsOn: row.starts_on,
     endsOn: row.ends_on,
+    confirmedAt: row.confirmed_at,
+    confirmedBy: row.confirmed_by,
+    confirmedNote: row.confirmed_note,
     memberCanCreateProposals: row.member_can_create_proposals,
     memberCanCreateExpenses: row.member_can_create_expenses,
+    memberCanSeeDateResults: row.member_can_see_date_results,
+    memberCanSeePlaceResults: row.member_can_see_place_results,
+    memberCanModifyPlaceFields: row.member_can_modify_place_fields,
+    settlementMarkPaidPolicy: row.settlement_mark_paid_policy,
     closedAt: row.closed_at,
     createdAt: row.created_at,
     updatedAt: row.updated_at,

@@ -1,4 +1,5 @@
 export type DestinationPollStatus = 'draft' | 'active' | 'closed' | 'reopened';
+export type DestinationCustomFieldType = 'text' | 'number' | 'money' | 'boolean' | 'url';
 
 export type DestinationPoll = {
   id: string;
@@ -38,6 +39,62 @@ export type DestinationProposal = {
   selectedAt: string | null;
   createdAt: string;
   updatedAt: string;
+};
+
+export type DestinationCustomField = {
+  id: string;
+  tripId: string;
+  pollId: string | null;
+  createdBy: string;
+  name: string;
+  emoji: string | null;
+  fieldType: DestinationCustomFieldType;
+  showOnCard: boolean;
+  required: boolean;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type DestinationCustomFieldRow = {
+  id: string;
+  trip_id: string;
+  poll_id: string | null;
+  created_by: string;
+  name: string;
+  emoji: string | null;
+  field_type: DestinationCustomFieldType;
+  show_on_card: boolean;
+  required: boolean;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type DestinationCustomFieldValue = {
+  id: string;
+  proposalId: string;
+  fieldId: string;
+  valueText: string | null;
+  valueNumber: number | null;
+  valueMoneyCents: number | null;
+  valueBoolean: boolean | null;
+  valueUrl: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type DestinationCustomFieldValueRow = {
+  id: string;
+  proposal_id: string;
+  field_id: string;
+  value_text: string | null;
+  value_number: number | null;
+  value_money_cents: number | null;
+  value_boolean: boolean | null;
+  value_url: string | null;
+  created_at: string;
+  updated_at: string;
 };
 
 export type DestinationProposalRow = {
@@ -162,6 +219,40 @@ export function mapDestinationProposalRow(row: DestinationProposalRow): Destinat
     pros: row.pros,
     cons: row.cons,
     selectedAt: row.selected_at,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+export function mapDestinationCustomFieldRow(row: DestinationCustomFieldRow): DestinationCustomField {
+  return {
+    id: row.id,
+    tripId: row.trip_id,
+    pollId: row.poll_id,
+    createdBy: row.created_by,
+    name: row.name,
+    emoji: row.emoji,
+    fieldType: row.field_type,
+    showOnCard: row.show_on_card,
+    required: row.required,
+    sortOrder: row.sort_order,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+export function mapDestinationCustomFieldValueRow(
+  row: DestinationCustomFieldValueRow,
+): DestinationCustomFieldValue {
+  return {
+    id: row.id,
+    proposalId: row.proposal_id,
+    fieldId: row.field_id,
+    valueText: row.value_text,
+    valueNumber: row.value_number,
+    valueMoneyCents: row.value_money_cents,
+    valueBoolean: row.value_boolean,
+    valueUrl: row.value_url,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };

@@ -19,6 +19,16 @@ export const tripSettingsSchema = z.object({
   timezone: z.string().trim().min(1, 'Timezone is required.'),
   memberCanCreateProposals: z.boolean(),
   memberCanCreateExpenses: z.boolean(),
+  memberCanSeeDateResults: z.boolean(),
+  memberCanSeePlaceResults: z.boolean(),
+  memberCanModifyPlaceFields: z.boolean(),
+  settlementMarkPaidPolicy: z.enum(['owner_admin_only', 'participants']),
+});
+
+export const confirmTripSchema = z.object({
+  tripId: z.string().uuid(),
+  confirmedBy: z.string().uuid(),
+  confirmedNote: z.string().trim().nullable(),
 });
 
 export const createInviteSchema = z
@@ -33,4 +43,5 @@ export const createInviteSchema = z
 
 export type CreateTripFormValues = z.infer<typeof createTripSchema>;
 export type TripSettingsFormValues = z.infer<typeof tripSettingsSchema>;
+export type ConfirmTripFormValues = z.infer<typeof confirmTripSchema>;
 export type CreateInviteFormValues = z.infer<typeof createInviteSchema>;

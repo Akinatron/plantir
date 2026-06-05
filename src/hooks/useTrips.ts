@@ -1,7 +1,19 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { createTrip, getTrip, getTripMembers, listTripsForUser, updateTripSettings } from '../services/tripService';
-import { CreateTripFormValues, tripSettingsSchema, TripSettingsFormValues } from '../lib/validation/trip';
+import {
+  confirmTrip,
+  createTrip,
+  getTrip,
+  getTripMembers,
+  listTripsForUser,
+  updateTripSettings,
+} from '../services/tripService';
+import {
+  ConfirmTripFormValues,
+  CreateTripFormValues,
+  TripSettingsFormValues,
+  tripSettingsSchema,
+} from '../lib/validation/trip';
 
 export const tripsQueryKey = (userId: string | null | undefined) => ['trips', userId] as const;
 export const tripQueryKey = (tripId: string | null | undefined) => ['trip', tripId] as const;
@@ -77,6 +89,24 @@ export function useUpdateTripSettingsMutation(tripId: string | null | undefined)
       }
 
       return updateTripSettings(tripId, tripSettingsSchema.parse(values));
+    },
+    onSuccess: (trip) => {
+      queryClient.setQueryData(tripQueryKey(trip.id), trip);
+      queryClient.invalidateQueries({ queryKey: tripsQueryKey(undefined).slice(0, 1) });
+    },
+  });
+}
+
+export function useConfirmTripMutation(tripId: string | null | undefined) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (values: ConfirmTripFormValues) => {
+      if (!tripId) {
+        throw new Error('Cannot confirm trip without a trip id.');
+      }
+
+      return confirmTrip(values);
     },
     onSuccess: (trip) => {
       queryClient.setQueryData(tripQueryKey(trip.id), trip);

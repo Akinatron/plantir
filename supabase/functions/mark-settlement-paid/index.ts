@@ -24,6 +24,12 @@ type PaymentRow = {
   paid_at: string | null;
 };
 
+type TripPaymentPolicyRow = {
+  status: string;
+  closed_at: string | null;
+  settlement_mark_paid_policy: 'owner_admin_only' | 'participants';
+};
+
 const paymentSelect =
   'id, trip_id, suggestion_id, from_user_id, to_user_id, amount_cents, currency_code, status, marked_paid_by, paid_at';
 
@@ -55,19 +61,26 @@ Deno.serve(async (request) => {
       return jsonResponse({ error: 'Only trip members can mark settlement payments.' }, 403);
     }
 
-    if (userId !== suggestion.from_user_id && userId !== suggestion.to_user_id) {
-      const { data: isAdmin, error: adminError } = await serviceClient.rpc('is_trip_admin', {
-        target_trip_id: suggestion.trip_id,
-        target_user_id: userId,
-      });
+    const [tripPolicy, isAdmin] = await Promise.all([
+      fetchTripPaymentPolicy(serviceClient, suggestion.trip_id),
+      checkTripAdmin(serviceClient, suggestion.trip_id, userId),
+    ]);
 
-      if (adminError) {
-        throw new Error(adminError.message);
-      }
+    if (tripPolicy.status === 'closed' || tripPolicy.closed_at !== null) {
+      return jsonResponse({ error: 'Closed trips are read-only.' }, 403);
+    }
 
-      if (isAdmin !== true) {
-        return jsonResponse({ error: 'Only settlement participants or admins can mark this paid.' }, 403);
-      }
+    if (tripPolicy.settlement_mark_paid_policy === 'owner_admin_only' && isAdmin !== true) {
+      return jsonResponse({ error: 'Only trip admins can mark settlements paid.' }, 403);
+    }
+
+    if (
+      tripPolicy.settlement_mark_paid_policy === 'participants'
+      && isAdmin !== true
+      && userId !== suggestion.from_user_id
+      && userId !== suggestion.to_user_id
+    ) {
+      return jsonResponse({ error: 'Only settlement participants or admins can mark this paid.' }, 403);
     }
 
     const payment = await createPaidPayment(serviceClient, suggestion, userId);
@@ -110,6 +123,44 @@ async function fetchSuggestion(serviceClient: ReturnType<typeof createServiceCli
   }
 
   return data;
+}
+
+async function fetchTripPaymentPolicy(
+  serviceClient: ReturnType<typeof createServiceClient>,
+  tripId: string,
+): Promise<TripPaymentPolicyRow> {
+  const { data, error } = await serviceClient
+    .from('trips')
+    .select('status, closed_at, settlement_mark_paid_policy')
+    .eq('id', tripId)
+    .maybeSingle<TripPaymentPolicyRow>();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  if (!data) {
+    throw new Error('Trip not found.');
+  }
+
+  return data;
+}
+
+async function checkTripAdmin(
+  serviceClient: ReturnType<typeof createServiceClient>,
+  tripId: string,
+  userId: string,
+): Promise<boolean> {
+  const { data, error } = await serviceClient.rpc('is_trip_admin', {
+    target_trip_id: tripId,
+    target_user_id: userId,
+  });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data === true;
 }
 
 async function createPaidPayment(

@@ -3,22 +3,31 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   closeDestinationPoll,
   computeDestinationResults,
+  createDestinationCustomField,
   createDestinationPoll,
   createDestinationProposal,
   createProposalImageSignedUrl,
+  deleteDestinationCustomField,
   fetchLinkMetadata,
   getDestinationProposal,
   getLatestDestinationPollBundle,
   getUserDestinationVote,
+  listDestinationCustomFieldValues,
+  listDestinationCustomFields,
   listDestinationResults,
   listProposalImages,
+  updateDestinationCustomField,
+  upsertDestinationCustomFieldValues,
   voteForDestinationProposal,
 } from '../services/destinationService';
 import {
   CloseDestinationPollFormValues,
+  DestinationCustomFieldFormValues,
   DestinationSetupFormValues,
   DestinationVoteFormValues,
+  ParsedUpsertDestinationCustomFieldValuesFormValues,
   ParsedDestinationProposalFormValues,
+  UpdateDestinationCustomFieldFormValues,
 } from '../lib/validation/destination';
 import { tripQueryKey, tripsQueryKey } from './useTrips';
 
@@ -33,6 +42,12 @@ export const destinationVoteQueryKey = (
 ) => ['destination-vote', pollId, userId] as const;
 export const destinationResultsQueryKey = (pollId: string | null | undefined) =>
   ['destination-results', pollId] as const;
+export const destinationCustomFieldsQueryKey = (
+  tripId: string | null | undefined,
+  pollId: string | null | undefined,
+) => ['destination-custom-fields', tripId, pollId] as const;
+export const destinationCustomFieldValuesQueryKey = (proposalId: string | null | undefined) =>
+  ['destination-custom-field-values', proposalId] as const;
 
 export function useDestinationBundleQuery(tripId: string | null | undefined) {
   return useQuery({
@@ -110,6 +125,37 @@ export function useDestinationResultsQuery(pollId: string | null | undefined) {
       return listDestinationResults(pollId);
     },
     enabled: Boolean(pollId),
+  });
+}
+
+export function useDestinationCustomFieldsQuery(
+  tripId: string | null | undefined,
+  pollId?: string | null,
+) {
+  return useQuery({
+    queryKey: destinationCustomFieldsQueryKey(tripId, pollId),
+    queryFn: () => {
+      if (!tripId) {
+        throw new Error('Cannot load custom fields without a trip id.');
+      }
+
+      return listDestinationCustomFields(tripId, pollId);
+    },
+    enabled: Boolean(tripId),
+  });
+}
+
+export function useDestinationCustomFieldValuesQuery(proposalId: string | null | undefined) {
+  return useQuery({
+    queryKey: destinationCustomFieldValuesQueryKey(proposalId),
+    queryFn: () => {
+      if (!proposalId) {
+        throw new Error('Cannot load custom field values without a proposal id.');
+      }
+
+      return listDestinationCustomFieldValues(proposalId);
+    },
+    enabled: Boolean(proposalId),
   });
 }
 
@@ -200,5 +246,66 @@ export function useCloseDestinationPollMutation(tripId: string | null | undefine
 export function useFetchLinkMetadataMutation() {
   return useMutation({
     mutationFn: fetchLinkMetadata,
+  });
+}
+
+export function useCreateDestinationCustomFieldMutation(
+  userId: string | null | undefined,
+  tripId: string | null | undefined,
+  pollId?: string | null,
+) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (values: DestinationCustomFieldFormValues) => {
+      if (!userId) {
+        throw new Error('Cannot create custom field without a user id.');
+      }
+
+      return createDestinationCustomField(userId, values);
+    },
+    onSuccess: (field) => {
+      queryClient.invalidateQueries({ queryKey: destinationCustomFieldsQueryKey(tripId ?? field.tripId, pollId) });
+    },
+  });
+}
+
+export function useUpdateDestinationCustomFieldMutation(
+  tripId: string | null | undefined,
+  pollId?: string | null,
+) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (values: UpdateDestinationCustomFieldFormValues) => updateDestinationCustomField(values),
+    onSuccess: (field) => {
+      queryClient.invalidateQueries({ queryKey: destinationCustomFieldsQueryKey(tripId ?? field.tripId, pollId) });
+    },
+  });
+}
+
+export function useDeleteDestinationCustomFieldMutation(
+  tripId: string | null | undefined,
+  pollId?: string | null,
+) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: deleteDestinationCustomField,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: destinationCustomFieldsQueryKey(tripId, pollId) });
+    },
+  });
+}
+
+export function useUpsertDestinationCustomFieldValuesMutation(proposalId: string | null | undefined) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (values: ParsedUpsertDestinationCustomFieldValuesFormValues) =>
+      upsertDestinationCustomFieldValues(values),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: destinationCustomFieldValuesQueryKey(proposalId) });
+    },
   });
 }

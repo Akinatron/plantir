@@ -56,10 +56,18 @@ describe('trip validation', () => {
         timezone: 'Europe/Madrid',
         memberCanCreateProposals: false,
         memberCanCreateExpenses: true,
+        memberCanSeeDateResults: true,
+        memberCanSeePlaceResults: false,
+        memberCanModifyPlaceFields: true,
+        settlementMarkPaidPolicy: 'owner_admin_only',
       }),
     ).toMatchObject({
       memberCanCreateProposals: false,
       memberCanCreateExpenses: true,
+      memberCanSeeDateResults: true,
+      memberCanSeePlaceResults: false,
+      memberCanModifyPlaceFields: true,
+      settlementMarkPaidPolicy: 'owner_admin_only',
     });
   });
 });

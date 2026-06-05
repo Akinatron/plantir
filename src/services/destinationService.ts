@@ -4,15 +4,25 @@ import { getSupabaseClient } from '../lib/supabase/client';
 import { logTripActivity, sendTripNotification } from './notificationService';
 import {
   CloseDestinationPollFormValues,
+  DestinationCustomFieldFormValues,
   DestinationSetupFormValues,
   DestinationVoteFormValues,
+  ParsedUpsertDestinationCustomFieldValuesFormValues,
   ParsedDestinationProposalFormValues,
+  UpdateDestinationCustomFieldFormValues,
   closeDestinationPollSchema,
+  destinationCustomFieldSchema,
   destinationSetupSchema,
   destinationVoteSchema,
   fetchLinkMetadataSchema,
+  updateDestinationCustomFieldSchema,
+  upsertDestinationCustomFieldValuesSchema,
 } from '../lib/validation/destination';
 import {
+  DestinationCustomField,
+  DestinationCustomFieldRow,
+  DestinationCustomFieldValue,
+  DestinationCustomFieldValueRow,
   DestinationPoll,
   DestinationPollBundle,
   DestinationPollResult,
@@ -25,6 +35,8 @@ import {
   DestinationVote,
   DestinationVoteRow,
   LinkMetadata,
+  mapDestinationCustomFieldRow,
+  mapDestinationCustomFieldValueRow,
   mapDestinationPollResultRow,
   mapDestinationPollRow,
   mapDestinationProposalImageRow,
@@ -37,6 +49,10 @@ const proposalSelect =
   'id, trip_id, poll_id, created_by, title, description, url, location_text, estimated_price_cents, currency_code, price_per_person_cents, capacity, bedrooms, bathrooms, pros, cons, selected_at, created_at, updated_at';
 const resultSelect =
   'id, poll_id, proposal_id, vote_count, total_member_count, score, rank, is_winner, is_tied_winner, computed_at';
+const customFieldSelect =
+  'id, trip_id, poll_id, created_by, name, emoji, field_type, show_on_card, required, sort_order, created_at, updated_at';
+const customFieldValueSelect =
+  'id, proposal_id, field_id, value_text, value_number, value_money_cents, value_boolean, value_url, created_at, updated_at';
 
 export async function getLatestDestinationPollBundle(tripId: string): Promise<DestinationPollBundle> {
   const supabase = getSupabaseClient();
@@ -183,6 +199,13 @@ export async function createDestinationProposal(
     });
   }
 
+  if (parsed.customFieldValues.length > 0) {
+    await upsertDestinationCustomFieldValues({
+      proposalId: proposal.id,
+      values: parsed.customFieldValues,
+    });
+  }
+
   await logNonBlocking(() =>
     logTripActivity({
       tripId: proposal.tripId,
@@ -208,6 +231,151 @@ export async function createDestinationProposal(
   );
 
   return proposal;
+}
+
+export async function listDestinationCustomFields(
+  tripId: string,
+  pollId?: string | null,
+): Promise<DestinationCustomField[]> {
+  const supabase = getSupabaseClient();
+  let query = supabase
+    .from('destination_custom_fields')
+    .select(customFieldSelect)
+    .eq('trip_id', tripId)
+    .is('deleted_at', null);
+
+  if (pollId) {
+    query = query.or(`poll_id.is.null,poll_id.eq.${pollId}`);
+  }
+
+  const { data, error } = await query
+    .order('sort_order', { ascending: true })
+    .order('created_at', { ascending: true })
+    .returns<DestinationCustomFieldRow[]>();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return (data ?? []).map(mapDestinationCustomFieldRow);
+}
+
+export async function createDestinationCustomField(
+  userId: string,
+  values: DestinationCustomFieldFormValues,
+): Promise<DestinationCustomField> {
+  const parsed = destinationCustomFieldSchema.parse(values);
+  const supabase = getSupabaseClient();
+  const { data, error } = await supabase
+    .from('destination_custom_fields')
+    .insert({
+      trip_id: parsed.tripId,
+      poll_id: parsed.pollId,
+      created_by: userId,
+      name: parsed.name,
+      emoji: parsed.emoji?.trim() || null,
+      field_type: parsed.fieldType,
+      show_on_card: parsed.showOnCard,
+      required: parsed.required,
+      sort_order: parsed.sortOrder,
+    })
+    .select(customFieldSelect)
+    .single<DestinationCustomFieldRow>();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return mapDestinationCustomFieldRow(data);
+}
+
+export async function updateDestinationCustomField(
+  values: UpdateDestinationCustomFieldFormValues,
+): Promise<DestinationCustomField> {
+  const parsed = updateDestinationCustomFieldSchema.parse(values);
+  const supabase = getSupabaseClient();
+  const { data, error } = await supabase
+    .from('destination_custom_fields')
+    .update({
+      trip_id: parsed.tripId,
+      poll_id: parsed.pollId,
+      name: parsed.name,
+      emoji: parsed.emoji?.trim() || null,
+      field_type: parsed.fieldType,
+      show_on_card: parsed.showOnCard,
+      required: parsed.required,
+      sort_order: parsed.sortOrder,
+    })
+    .eq('id', parsed.id)
+    .select(customFieldSelect)
+    .single<DestinationCustomFieldRow>();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return mapDestinationCustomFieldRow(data);
+}
+
+export async function deleteDestinationCustomField(fieldId: string): Promise<void> {
+  const supabase = getSupabaseClient();
+  const { error } = await supabase
+    .from('destination_custom_fields')
+    .update({ deleted_at: new Date().toISOString() })
+    .eq('id', fieldId);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+}
+
+export async function listDestinationCustomFieldValues(
+  proposalId: string,
+): Promise<DestinationCustomFieldValue[]> {
+  const supabase = getSupabaseClient();
+  const { data, error } = await supabase
+    .from('destination_custom_field_values')
+    .select(customFieldValueSelect)
+    .eq('proposal_id', proposalId)
+    .returns<DestinationCustomFieldValueRow[]>();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return (data ?? []).map(mapDestinationCustomFieldValueRow);
+}
+
+export async function upsertDestinationCustomFieldValues(
+  values: ParsedUpsertDestinationCustomFieldValuesFormValues,
+): Promise<DestinationCustomFieldValue[]> {
+  const parsed = upsertDestinationCustomFieldValuesSchema.parse(values);
+
+  if (parsed.values.length === 0) {
+    return [];
+  }
+
+  const supabase = getSupabaseClient();
+  const rows = parsed.values.map((value) => ({
+    proposal_id: parsed.proposalId,
+    field_id: value.fieldId,
+    value_text: value.valueText,
+    value_number: value.valueNumber,
+    value_money_cents: value.valueMoneyCents,
+    value_boolean: value.valueBoolean,
+    value_url: value.valueUrl,
+  }));
+  const { data, error } = await supabase
+    .from('destination_custom_field_values')
+    .upsert(rows, { onConflict: 'proposal_id,field_id' })
+    .select(customFieldValueSelect)
+    .returns<DestinationCustomFieldValueRow[]>();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return (data ?? []).map(mapDestinationCustomFieldValueRow);
 }
 
 export async function listProposalImages(proposalId: string): Promise<DestinationProposalImage[]> {

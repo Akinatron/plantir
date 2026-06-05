@@ -1,10 +1,15 @@
 import { getSupabaseClient } from '../lib/supabase/client';
 import { logTripActivity } from './notificationService';
-import { CreateTripFormValues, TripSettingsFormValues } from '../lib/validation/trip';
+import {
+  ConfirmTripFormValues,
+  CreateTripFormValues,
+  TripSettingsFormValues,
+  confirmTripSchema,
+} from '../lib/validation/trip';
 import { Trip, TripMember, TripMemberRow, TripRow, mapTripMemberRow, mapTripRow } from '../types/trip';
 
 const tripSelect =
-  'id, owner_id, title, description, timezone, status, starts_on, ends_on, member_can_create_proposals, member_can_create_expenses, closed_at, created_at, updated_at';
+  'id, owner_id, title, description, timezone, status, starts_on, ends_on, confirmed_at, confirmed_by, confirmed_note, member_can_create_proposals, member_can_create_expenses, member_can_see_date_results, member_can_see_place_results, member_can_modify_place_fields, settlement_mark_paid_policy, closed_at, created_at, updated_at';
 
 export async function listTripsForUser(userId: string): Promise<Trip[]> {
   const supabase = getSupabaseClient();
@@ -94,6 +99,10 @@ export async function updateTripSettings(
       timezone: values.timezone,
       member_can_create_proposals: values.memberCanCreateProposals,
       member_can_create_expenses: values.memberCanCreateExpenses,
+      member_can_see_date_results: values.memberCanSeeDateResults,
+      member_can_see_place_results: values.memberCanSeePlaceResults,
+      member_can_modify_place_fields: values.memberCanModifyPlaceFields,
+      settlement_mark_paid_policy: values.settlementMarkPaidPolicy,
     })
     .eq('id', tripId)
     .select(tripSelect)
@@ -102,6 +111,37 @@ export async function updateTripSettings(
   if (error) {
     throw new Error(error.message);
   }
+
+  return mapTripRow(data);
+}
+
+export async function confirmTrip(values: ConfirmTripFormValues): Promise<Trip> {
+  const parsed = confirmTripSchema.parse(values);
+  const supabase = getSupabaseClient();
+  const { data, error } = await supabase
+    .from('trips')
+    .update({
+      confirmed_at: new Date().toISOString(),
+      confirmed_by: parsed.confirmedBy,
+      confirmed_note: parsed.confirmedNote?.trim() || null,
+    })
+    .eq('id', parsed.tripId)
+    .select(tripSelect)
+    .single<TripRow>();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  await logNonBlocking(() =>
+    logTripActivity({
+      tripId: data.id,
+      eventType: 'trip_confirmed',
+      metadata: {
+        confirmed_by: parsed.confirmedBy,
+      },
+    }),
+  );
 
   return mapTripRow(data);
 }

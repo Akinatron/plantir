@@ -45,6 +45,46 @@ const nullableMoneyCentsFromText = z
     return parseMoneyToCents(value);
   });
 
+const customFieldValueSchema = z
+  .object({
+    fieldId: z.string().uuid(),
+    valueText: z.string().trim().nullable().optional(),
+    valueNumber: z.union([z.string(), z.number(), z.null()]).optional(),
+    valueMoneyCents: z.union([z.string(), z.number(), z.null()]).optional(),
+    valueBoolean: z.boolean().nullable().optional(),
+    valueUrl: z
+      .string()
+      .trim()
+      .nullable()
+      .optional()
+      .transform((value) => (value === undefined ? null : normalizeOptionalUrl(value))),
+  })
+  .transform((value) => ({
+    fieldId: value.fieldId,
+    valueText: normalizeOptionalText(value.valueText),
+    valueNumber: parseOptionalNumber(value.valueNumber),
+    valueMoneyCents: parseOptionalMoney(value.valueMoneyCents),
+    valueBoolean: value.valueBoolean ?? null,
+    valueUrl: value.valueUrl ?? null,
+  }))
+  .refine((value) => value.valueUrl === null || z.string().url().safeParse(value.valueUrl).success, {
+    message: 'Custom URL value must be a valid URL.',
+    path: ['valueUrl'],
+  })
+  .refine(
+    (value) =>
+      [
+        value.valueText,
+        value.valueNumber,
+        value.valueMoneyCents,
+        value.valueBoolean,
+        value.valueUrl,
+      ].filter((item) => item !== null).length <= 1,
+    {
+      message: 'Custom field values can set only one typed value.',
+    },
+  );
+
 export const destinationSetupSchema = z.object({
   tripId: z.string().uuid(),
 });
@@ -72,6 +112,7 @@ export const destinationProposalSchema = z
     imageBase64: z.string().nullable(),
     imageContentType: z.string().nullable(),
     imageFileExtension: z.string().nullable(),
+    customFieldValues: z.array(customFieldValueSchema).optional().default([]),
   })
   .refine((value) => value.totalPriceCents === null || value.currencyCode !== null, {
     message: 'Currency is required when total price is set.',
@@ -102,11 +143,39 @@ export const fetchLinkMetadataSchema = z.object({
     .pipe(z.string().url()),
 });
 
+export const destinationCustomFieldSchema = z.object({
+  tripId: z.string().uuid(),
+  pollId: z.string().uuid().nullable(),
+  name: z.string().trim().min(1, 'Field name is required.'),
+  emoji: z.string().trim().nullable(),
+  fieldType: z.enum(['text', 'number', 'money', 'boolean', 'url']),
+  showOnCard: z.boolean(),
+  required: z.boolean(),
+  sortOrder: z.number().int().nonnegative(),
+});
+
+export const updateDestinationCustomFieldSchema = destinationCustomFieldSchema.extend({
+  id: z.string().uuid(),
+});
+
+export const upsertDestinationCustomFieldValuesSchema = z.object({
+  proposalId: z.string().uuid(),
+  values: z.array(customFieldValueSchema),
+});
+
 export type DestinationSetupFormValues = z.infer<typeof destinationSetupSchema>;
 export type DestinationProposalFormValues = z.input<typeof destinationProposalSchema>;
 export type ParsedDestinationProposalFormValues = z.output<typeof destinationProposalSchema>;
 export type DestinationVoteFormValues = z.infer<typeof destinationVoteSchema>;
 export type CloseDestinationPollFormValues = z.infer<typeof closeDestinationPollSchema>;
+export type DestinationCustomFieldFormValues = z.infer<typeof destinationCustomFieldSchema>;
+export type UpdateDestinationCustomFieldFormValues = z.infer<typeof updateDestinationCustomFieldSchema>;
+export type UpsertDestinationCustomFieldValuesFormValues = z.input<
+  typeof upsertDestinationCustomFieldValuesSchema
+>;
+export type ParsedUpsertDestinationCustomFieldValuesFormValues = z.output<
+  typeof upsertDestinationCustomFieldValuesSchema
+>;
 
 function splitLines(value: string): string[] {
   return value
@@ -128,4 +197,34 @@ function normalizeOptionalUrl(value: string | null): string | null {
   }
 
   return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+}
+
+function normalizeOptionalText(value: string | null | undefined): string | null {
+  if (!value) {
+    return null;
+  }
+
+  const trimmed = value.trim();
+  return trimmed ? trimmed : null;
+}
+
+function parseOptionalNumber(value: string | number | null | undefined): number | null {
+  if (value === undefined || value === null || value === '') {
+    return null;
+  }
+
+  const parsed = typeof value === 'number' ? value : Number(value);
+  if (!Number.isFinite(parsed)) {
+    throw new Error('Custom number value must be numeric.');
+  }
+
+  return parsed;
+}
+
+function parseOptionalMoney(value: string | number | null | undefined): number | null {
+  if (value === undefined || value === null || value === '') {
+    return null;
+  }
+
+  return typeof value === 'number' ? value : parseMoneyToCents(value);
 }
