@@ -1,7 +1,10 @@
 import { PropsWithChildren } from 'react';
 import { StyleSheet, Text, TextProps } from 'react-native';
 
-type TextVariant = 'title' | 'subtitle' | 'body' | 'eyebrow';
+import { colors } from '../../design/theme';
+import { typography } from '../../design/typography';
+
+type TextVariant = 'display' | 'title' | 'subtitle' | 'body' | 'bodyStrong' | 'label' | 'caption' | 'eyebrow';
 
 type AppTextProps = PropsWithChildren<
   TextProps & {
@@ -19,28 +22,31 @@ export function AppText({ children, variant = 'body', style, ...props }: AppText
 
 const styles = StyleSheet.create({
   base: {
-    color: '#101828',
+    color: colors.text,
   },
+  display: typography.display,
   title: {
-    fontSize: 34,
-    fontWeight: '800',
-    lineHeight: 40,
+    ...typography.title,
   },
   subtitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    lineHeight: 28,
+    ...typography.subtitle,
   },
   body: {
-    color: '#475467',
-    fontSize: 16,
-    lineHeight: 24,
+    ...typography.body,
+    color: colors.textMuted,
+  },
+  bodyStrong: {
+    ...typography.bodyStrong,
+  },
+  label: {
+    ...typography.label,
   },
   eyebrow: {
-    color: '#0F6B57',
-    fontSize: 13,
-    fontWeight: '800',
-    letterSpacing: 0,
-    textTransform: 'uppercase',
+    ...typography.eyebrow,
+    color: colors.primary,
+  },
+  caption: {
+    ...typography.caption,
+    color: colors.textSubtle,
   },
 });

@@ -1,5 +1,7 @@
 import { StyleSheet, View } from 'react-native';
 
+import { colors } from '../../design/theme';
+import { radius, spacing } from '../../design/spacing';
 import { AppText } from '../ui/AppText';
 
 type NoticeTone = 'error' | 'success' | 'info';
@@ -18,38 +20,42 @@ export function InlineNotice({ title, message, tone = 'info' }: InlineNoticeProp
       accessibilityLiveRegion={tone === 'error' ? 'assertive' : 'polite'}
       accessible
     >
-      <AppText variant="eyebrow" style={styles.title}>
+      <AppText variant="label" style={styles.title}>
         {title}
       </AppText>
-      {message ? <AppText style={styles.message}>{message}</AppText> : null}
+      {message ? (
+        <AppText variant="caption" style={styles.message}>
+          {message}
+        </AppText>
+      ) : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    borderRadius: 8,
+    borderRadius: radius.md,
     borderWidth: 1,
-    gap: 4,
-    padding: 12,
+    gap: spacing[1],
+    paddingHorizontal: spacing[3],
+    paddingVertical: spacing[3],
   },
   error: {
-    backgroundColor: '#FEF3F2',
-    borderColor: '#FDA29B',
+    backgroundColor: colors.dangerSoft,
+    borderColor: colors.coralSoft,
   },
   success: {
-    backgroundColor: '#ECFDF3',
-    borderColor: '#75E0A7',
+    backgroundColor: colors.successSoft,
+    borderColor: colors.primarySoft,
   },
   info: {
-    backgroundColor: '#EFF8FF',
-    borderColor: '#84CAFF',
+    backgroundColor: colors.infoSoft,
+    borderColor: colors.skySoft,
   },
   title: {
-    color: '#101828',
+    color: colors.text,
   },
   message: {
-    fontSize: 14,
-    lineHeight: 20,
+    color: colors.textMuted,
   },
 });

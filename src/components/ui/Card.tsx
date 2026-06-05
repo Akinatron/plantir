@@ -1,30 +1,69 @@
 import { PropsWithChildren } from 'react';
 import { StyleSheet, View, ViewProps } from 'react-native';
 
+import { colors } from '../../design/theme';
+import { radius, spacing } from '../../design/spacing';
+import { shadows } from '../../design/shadows';
+
+type CardVariant = 'default' | 'elevated' | 'soft' | 'outline';
+type CardPadding = 'none' | 'sm' | 'md' | 'lg';
+
 type CardProps = PropsWithChildren<
   ViewProps & {
     selected?: boolean;
+    variant?: CardVariant;
+    padding?: CardPadding;
   }
 >;
 
-export function Card({ children, selected = false, style, ...props }: CardProps) {
+export function Card({ children, selected = false, variant = 'default', padding = 'md', style, ...props }: CardProps) {
   return (
-    <View {...props} style={[styles.card, selected && styles.selected, style]}>
+    <View {...props} style={[styles.base, styles[variant], styles[padding], selected && styles.selected, style]}>
       {children}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#EAECF0',
-    borderRadius: 8,
+  base: {
+    borderRadius: radius.lg,
+    gap: spacing[3],
+  },
+  default: {
+    backgroundColor: colors.surface,
+    borderColor: colors.border,
     borderWidth: 1,
-    gap: 10,
-    padding: 16,
+  },
+  elevated: {
+    backgroundColor: colors.surface,
+    borderColor: colors.border,
+    borderWidth: 1,
+    ...shadows.md,
+  },
+  soft: {
+    backgroundColor: colors.surfaceSoft,
+    borderColor: colors.border,
+    borderWidth: 1,
+  },
+  outline: {
+    backgroundColor: 'transparent',
+    borderColor: colors.borderStrong,
+    borderWidth: 1,
   },
   selected: {
-    borderColor: '#0F6B57',
+    borderColor: colors.primary,
+    borderWidth: 1.5,
+  },
+  none: {
+    padding: 0,
+  },
+  sm: {
+    padding: spacing[3],
+  },
+  md: {
+    padding: spacing[4],
+  },
+  lg: {
+    padding: spacing[5],
   },
 });
