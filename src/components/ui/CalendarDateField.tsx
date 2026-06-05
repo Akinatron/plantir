@@ -1,6 +1,9 @@
 import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
+import { colors } from '../../design/theme';
+import { radius, spacing } from '../../design/spacing';
+import { typography } from '../../design/typography';
 import { AppText } from './AppText';
 import { Button } from './Button';
 import { TextField } from './TextField';
@@ -56,6 +59,8 @@ export function CalendarDateField({
             <Button
               label="<"
               variant="secondary"
+              size="sm"
+              fullWidth={false}
               accessibilityLabel="Previous month"
               onPress={() => setVisibleMonth((current) => addMonths(current, -1))}
               style={styles.monthButton}
@@ -66,6 +71,8 @@ export function CalendarDateField({
             <Button
               label=">"
               variant="secondary"
+              size="sm"
+              fullWidth={false}
               accessibilityLabel="Next month"
               onPress={() => setVisibleMonth((current) => addMonths(current, 1))}
               style={styles.monthButton}
@@ -109,6 +116,7 @@ export function CalendarDateField({
             <Button
               label="Today"
               variant="secondary"
+              fullWidth={false}
               onPress={() => {
                 const today = toIsoDate(new Date());
                 onChange(today);
@@ -119,7 +127,8 @@ export function CalendarDateField({
             {allowClear ? (
               <Button
                 label="Clear"
-                variant="secondary"
+                variant="ghost"
+                fullWidth={false}
                 onPress={() => {
                   onChange(null);
                   setIsOpen(false);
@@ -251,50 +260,49 @@ function buildIsoDateTime(date: string, time: string): string {
 
 const styles = StyleSheet.create({
   container: {
-    gap: 8,
+    gap: spacing[2],
   },
   valueButton: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#D0D5DD',
-    borderRadius: 8,
+    backgroundColor: colors.surface,
+    borderColor: colors.borderStrong,
+    borderRadius: radius.md,
     borderWidth: 1,
     justifyContent: 'center',
-    minHeight: 48,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
+    minHeight: 50,
+    paddingHorizontal: spacing[3],
+    paddingVertical: spacing[3],
   },
   valueButtonError: {
-    borderColor: '#B42318',
+    borderColor: colors.danger,
   },
   valueText: {
-    color: '#101828',
+    ...typography.body,
+    color: colors.text,
   },
   placeholder: {
-    color: '#667085',
+    color: colors.textSubtle,
   },
   error: {
-    color: '#B42318',
-    fontSize: 13,
-    lineHeight: 18,
+    ...typography.caption,
+    color: colors.danger,
   },
   calendarPanel: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#D0D5DD',
-    borderRadius: 8,
+    backgroundColor: colors.surface,
+    borderColor: colors.border,
+    borderRadius: radius.lg,
     borderWidth: 1,
-    gap: 12,
-    padding: 12,
+    gap: spacing[3],
+    padding: spacing[3],
   },
   monthHeader: {
     alignItems: 'center',
     flexDirection: 'row',
-    gap: 10,
+    gap: spacing[2],
     justifyContent: 'space-between',
   },
   monthButton: {
     minHeight: 40,
     minWidth: 44,
-    paddingHorizontal: 10,
   },
   monthTitle: {
     flex: 1,
@@ -304,9 +312,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   weekDay: {
-    color: '#667085',
+    ...typography.caption,
+    color: colors.textSubtle,
     flex: 1,
-    fontSize: 12,
     fontWeight: '700',
     textAlign: 'center',
   },
@@ -318,24 +326,27 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     aspectRatio: 1,
     justifyContent: 'center',
+    padding: 2,
     width: `${100 / 7}%`,
   },
   dayButtonSelected: {
-    backgroundColor: '#0F6B57',
-    borderRadius: 8,
+    backgroundColor: colors.primary,
+    borderRadius: radius.md,
   },
   dayText: {
-    color: '#101828',
+    ...typography.label,
+    color: colors.text,
     fontWeight: '700',
   },
   dayTextMuted: {
-    color: '#98A2B3',
+    color: colors.textSubtle,
   },
   dayTextSelected: {
-    color: '#FFFFFF',
+    color: colors.primaryText,
   },
   calendarActions: {
     flexDirection: 'row',
-    gap: 10,
+    flexWrap: 'wrap',
+    gap: spacing[2],
   },
 });

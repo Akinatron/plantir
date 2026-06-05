@@ -1,15 +1,18 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import { Controller, useForm } from 'react-hook-form';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, StyleSheet, View } from 'react-native';
 
 import { InlineNotice } from '../src/components/feedback/InlineNotice';
-import { AppText } from '../src/components/ui/AppText';
 import { Button } from '../src/components/ui/Button';
 import { Screen } from '../src/components/ui/Screen';
 import { TextField } from '../src/components/ui/TextField';
+import { AuthPanel } from '../src/features/auth/AuthPanel';
 import { useAuth } from '../src/features/auth/AuthProvider';
 import { useSignupMutation } from '../src/hooks/useAuthMutations';
+import { colors } from '../src/design/theme';
+import { spacing } from '../src/design/spacing';
+import { typography } from '../src/design/typography';
 import { SignupFormValues, signupSchema } from '../src/lib/validation/auth';
 
 export default function SignupScreen() {
@@ -36,33 +39,38 @@ export default function SignupScreen() {
   });
 
   return (
-    <Screen>
-      <KeyboardAvoidingView
-        behavior={Platform.select({ ios: 'padding', android: undefined })}
-        style={styles.keyboard}
-      >
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-          <View style={styles.header}>
-            <AppText variant="eyebrow">New account</AppText>
-            <AppText variant="title">Create your profile</AppText>
-            <AppText>Set up the account foundation before creating trips.</AppText>
+    <KeyboardAvoidingView behavior={Platform.select({ ios: 'padding', android: undefined })} style={styles.keyboard}>
+      <Screen scroll centered contentContainerStyle={styles.screenContent}>
+        <AuthPanel
+          eyebrow="New account"
+          title="Create your profile"
+          description="Set up your account before creating trips and inviting the group."
+          footer={
+            <Link
+              href={{ pathname: '/login', params: params.next ? { next: params.next } : undefined }}
+              style={styles.link}
+            >
+              Already have an account?
+            </Link>
+          }
+        >
+          <View style={styles.noticeStack}>
+            {!isConfigured ? (
+              <InlineNotice title="Supabase is not configured" message={authError ?? undefined} tone="error" />
+            ) : null}
+
+            {signupMutation.error ? (
+              <InlineNotice title="Signup failed" message={signupMutation.error.message} tone="error" />
+            ) : null}
+
+            {signupMutation.isSuccess ? (
+              <InlineNotice
+                title="Account created"
+                message="If email confirmation is enabled, confirm your email before logging in."
+                tone="success"
+              />
+            ) : null}
           </View>
-
-          {!isConfigured ? (
-            <InlineNotice title="Supabase is not configured" message={authError ?? undefined} tone="error" />
-          ) : null}
-
-          {signupMutation.error ? (
-            <InlineNotice title="Signup failed" message={signupMutation.error.message} tone="error" />
-          ) : null}
-
-          {signupMutation.isSuccess ? (
-            <InlineNotice
-              title="Account created"
-              message="If email confirmation is enabled, confirm your email before logging in."
-              tone="success"
-            />
-          ) : null}
 
           <View style={styles.form}>
             <Controller
@@ -76,6 +84,7 @@ export default function SignupScreen() {
                   onChangeText={onChange}
                   value={value}
                   error={errors.displayName?.message}
+                  placeholder="Your name"
                 />
               )}
             />
@@ -92,6 +101,7 @@ export default function SignupScreen() {
                   onChangeText={onChange}
                   value={value}
                   error={errors.email?.message}
+                  placeholder="you@example.com"
                 />
               )}
             />
@@ -107,26 +117,20 @@ export default function SignupScreen() {
                   onChangeText={onChange}
                   value={value}
                   error={errors.password?.message}
+                  placeholder="Create a password"
                 />
               )}
             />
           </View>
 
           <Button
-            label="Create account"
+            label={signupMutation.isPending ? 'Creating...' : 'Create account'}
             onPress={onSubmit}
             disabled={!isConfigured || signupMutation.isPending}
           />
-
-          <Link
-            href={{ pathname: '/login', params: params.next ? { next: params.next } : undefined }}
-            style={styles.link}
-          >
-            Already have an account?
-          </Link>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </Screen>
+        </AuthPanel>
+      </Screen>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -134,22 +138,19 @@ const styles = StyleSheet.create({
   keyboard: {
     flex: 1,
   },
-  content: {
-    flexGrow: 1,
-    gap: 22,
+  screenContent: {
     justifyContent: 'center',
-    paddingVertical: 32,
+    paddingVertical: spacing[8],
   },
-  header: {
-    gap: 10,
+  noticeStack: {
+    gap: spacing[2],
   },
   form: {
-    gap: 16,
+    gap: spacing[4],
   },
   link: {
-    color: '#0F6B57',
-    fontSize: 16,
-    fontWeight: '700',
+    ...typography.label,
+    color: colors.primary,
     textAlign: 'center',
   },
 });
