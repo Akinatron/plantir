@@ -14,12 +14,6 @@ type TripTab = {
   icon: typeof Home;
 };
 
-type MoneyTab = {
-  key: 'expenses' | 'balances' | 'settlements';
-  label: string;
-  href: string;
-};
-
 type TripTabBarProps = {
   tripId: string;
 };
@@ -27,18 +21,12 @@ type TripTabBarProps = {
 export function TripTabBar({ tripId }: TripTabBarProps) {
   const pathname = usePathname();
   const activeTab = getActiveTripTab(pathname);
-  const activeMoneyTab = getActiveMoneyTab(pathname);
   const tabs: TripTab[] = [
     { key: 'overview', label: 'Overview', href: `/trips/${tripId}`, icon: Home },
     { key: 'dates', label: 'Dates', href: `/trips/${tripId}/date-poll/vote`, icon: CalendarDays },
     { key: 'places', label: 'Places', href: `/trips/${tripId}/destination`, icon: MapPinned },
     { key: 'money', label: 'Money', href: `/trips/${tripId}/expenses`, icon: CircleDollarSign },
     { key: 'group', label: 'Group', href: `/trips/${tripId}/members`, icon: UsersRound },
-  ];
-  const moneyTabs: MoneyTab[] = [
-    { key: 'expenses', label: 'Expenses', href: `/trips/${tripId}/expenses` },
-    { key: 'balances', label: 'Balances', href: `/trips/${tripId}/expenses/balances` },
-    { key: 'settlements', label: 'Settlements', href: `/trips/${tripId}/expenses/settlements` },
   ];
 
   return (
@@ -67,37 +55,6 @@ export function TripTabBar({ tripId }: TripTabBarProps) {
           );
         })}
       </ScrollView>
-
-      {activeTab === 'money' ? (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.secondaryContent}
-        >
-          {moneyTabs.map((tab) => {
-            const selected = activeMoneyTab === tab.key;
-
-            return (
-              <Link key={tab.key} href={tab.href} asChild>
-                <Pressable
-                  accessibilityRole="tab"
-                  accessibilityLabel={tab.label}
-                  accessibilityState={{ selected }}
-                  style={({ pressed }) => [
-                    styles.moneyTab,
-                    selected && styles.activeMoneyTab,
-                    pressed && styles.pressed,
-                  ]}
-                >
-                  <AppText style={[styles.moneyTabLabel, selected && styles.activeMoneyTabLabel]}>
-                    {tab.label}
-                  </AppText>
-                </Pressable>
-              </Link>
-            );
-          })}
-        </ScrollView>
-      ) : null}
     </View>
   );
 }
@@ -125,18 +82,6 @@ function getActiveTripTab(pathname: string): TripTab['key'] {
   }
 
   return 'overview';
-}
-
-function getActiveMoneyTab(pathname: string): MoneyTab['key'] {
-  if (pathname.includes('/balances')) {
-    return 'balances';
-  }
-
-  if (pathname.includes('/settlements')) {
-    return 'settlements';
-  }
-
-  return 'expenses';
 }
 
 const styles = StyleSheet.create({
@@ -176,30 +121,6 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
   },
   activeTabLabel: {
-    color: colors.primary,
-  },
-  secondaryContent: {
-    alignSelf: 'center',
-    gap: spacing[2],
-    maxWidth: layout.maxContentWidth,
-    paddingBottom: spacing[3],
-    paddingHorizontal: spacing[4],
-  },
-  moneyTab: {
-    borderBottomColor: 'transparent',
-    borderBottomWidth: 2,
-    minHeight: 36,
-    paddingHorizontal: spacing[2],
-    paddingVertical: spacing[2],
-  },
-  activeMoneyTab: {
-    borderBottomColor: colors.primary,
-  },
-  moneyTabLabel: {
-    ...typography.label,
-    color: colors.textMuted,
-  },
-  activeMoneyTabLabel: {
     color: colors.primary,
   },
 });
