@@ -6,6 +6,7 @@ import {
   createDatePoll,
   getLatestDatePollBundle,
   getUserDatePollVotes,
+  listDatePollVotes,
   listDatePollResults,
   saveDatePollVotes,
 } from '../services/datePollService';
@@ -19,6 +20,8 @@ export const datePollVotesQueryKey = (
 ) => ['date-poll-votes', pollId, userId] as const;
 export const datePollResultsQueryKey = (pollId: string | null | undefined) =>
   ['date-poll-results', pollId] as const;
+export const datePollAllVotesQueryKey = (pollId: string | null | undefined) =>
+  ['date-poll-all-votes', pollId] as const;
 
 export function useDatePollBundleQuery(tripId: string | null | undefined) {
   return useQuery({
@@ -48,6 +51,20 @@ export function useUserDatePollVotesQuery(
       return getUserDatePollVotes(pollId, userId);
     },
     enabled: Boolean(pollId && userId),
+  });
+}
+
+export function useDatePollVotesQuery(pollId: string | null | undefined) {
+  return useQuery({
+    queryKey: datePollAllVotesQueryKey(pollId),
+    queryFn: () => {
+      if (!pollId) {
+        throw new Error('Cannot load date votes without a poll id.');
+      }
+
+      return listDatePollVotes(pollId);
+    },
+    enabled: Boolean(pollId),
   });
 }
 
@@ -91,6 +108,7 @@ export function useSaveDatePollVotesMutation(tripId: string | null | undefined) 
     mutationFn: (values: DatePollVoteFormValues) => saveDatePollVotes(values),
     onSuccess: (_votes, values) => {
       queryClient.invalidateQueries({ queryKey: datePollVotesQueryKey(values.pollId, values.userId) });
+      queryClient.invalidateQueries({ queryKey: datePollAllVotesQueryKey(values.pollId) });
       queryClient.invalidateQueries({ queryKey: datePollResultsQueryKey(values.pollId) });
 
       if (tripId) {

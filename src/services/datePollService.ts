@@ -157,6 +157,21 @@ export async function getUserDatePollVotes(
   }, {});
 }
 
+export async function listDatePollVotes(pollId: string): Promise<DateAvailabilityVote[]> {
+  const supabase = getSupabaseClient();
+  const { data, error } = await supabase
+    .from('date_availability_votes')
+    .select('id, poll_id, user_id, available_on, status')
+    .eq('poll_id', pollId)
+    .returns<DateAvailabilityVoteRow[]>();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return (data ?? []).map(mapDateAvailabilityVoteRow);
+}
+
 export async function saveDatePollVotes(values: DatePollVoteFormValues): Promise<DateAvailabilityVote[]> {
   const parsed = datePollVoteSchema.parse(values);
   const supabase = getSupabaseClient();

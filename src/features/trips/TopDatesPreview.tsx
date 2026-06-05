@@ -53,7 +53,7 @@ export function TopDatesPreview({ href, results, isLoading = false, error, hasPo
                 </AppText>
               </View>
               <AppText variant="label" style={styles.percent}>
-                {Math.round(result.availablePercentage)}%
+                {formatPercentage(result.availablePercentage)}
               </AppText>
             </View>
           ))}
@@ -87,6 +87,10 @@ function formatDate(value: string) {
     day: 'numeric',
     month: 'short',
   });
+}
+
+function formatPercentage(value: number) {
+  return `${Math.round(value <= 1 ? value * 100 : value)}%`;
 }
 
 const styles = StyleSheet.create({
