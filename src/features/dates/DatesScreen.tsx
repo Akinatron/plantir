@@ -217,7 +217,7 @@ export function DatesScreen({ tripId }: DatesScreenProps) {
             <DateRankingList
               results={resultsQuery.data ?? []}
               isComputing={computeMutation.isPending}
-              canCompute={!isClosed}
+              canCompute={isAdmin && !isReadOnly}
               selectedResultId={selectedResult?.id}
               onCompute={() => computeMutation.mutate()}
               onSelectResult={(result) => setSelectedResultId(result.id)}
