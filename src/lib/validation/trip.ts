@@ -31,6 +31,11 @@ export const confirmTripSchema = z.object({
   confirmedNote: z.string().trim().nullable(),
 });
 
+export const updateTripMemberRoleSchema = z.object({
+  memberId: z.string().uuid(),
+  role: z.enum(['admin', 'member']),
+});
+
 export const createInviteSchema = z
   .object({
     tripId: z.string().uuid(),
@@ -44,4 +49,5 @@ export const createInviteSchema = z
 export type CreateTripFormValues = z.infer<typeof createTripSchema>;
 export type TripSettingsFormValues = z.infer<typeof tripSettingsSchema>;
 export type ConfirmTripFormValues = z.infer<typeof confirmTripSchema>;
+export type UpdateTripMemberRoleFormValues = z.infer<typeof updateTripMemberRoleSchema>;
 export type CreateInviteFormValues = z.infer<typeof createInviteSchema>;

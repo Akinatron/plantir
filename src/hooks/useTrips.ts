@@ -1,17 +1,21 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import {
+  closeTrip,
   confirmTrip,
   createTrip,
   getTrip,
   getTripMembers,
   listTripsForUser,
+  reopenTrip,
+  updateTripMemberRole,
   updateTripSettings,
 } from '../services/tripService';
 import {
   ConfirmTripFormValues,
   CreateTripFormValues,
   TripSettingsFormValues,
+  UpdateTripMemberRoleFormValues,
   tripSettingsSchema,
 } from '../lib/validation/trip';
 
@@ -111,6 +115,53 @@ export function useConfirmTripMutation(tripId: string | null | undefined) {
     onSuccess: (trip) => {
       queryClient.setQueryData(tripQueryKey(trip.id), trip);
       queryClient.invalidateQueries({ queryKey: tripsQueryKey(undefined).slice(0, 1) });
+    },
+  });
+}
+
+export function useCloseTripMutation(tripId: string | null | undefined) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => {
+      if (!tripId) {
+        throw new Error('Cannot close trip without a trip id.');
+      }
+
+      return closeTrip(tripId);
+    },
+    onSuccess: (trip) => {
+      queryClient.setQueryData(tripQueryKey(trip.id), trip);
+      queryClient.invalidateQueries({ queryKey: tripsQueryKey(undefined).slice(0, 1) });
+    },
+  });
+}
+
+export function useReopenTripMutation(tripId: string | null | undefined) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => {
+      if (!tripId) {
+        throw new Error('Cannot reopen trip without a trip id.');
+      }
+
+      return reopenTrip(tripId);
+    },
+    onSuccess: (trip) => {
+      queryClient.setQueryData(tripQueryKey(trip.id), trip);
+      queryClient.invalidateQueries({ queryKey: tripsQueryKey(undefined).slice(0, 1) });
+    },
+  });
+}
+
+export function useUpdateTripMemberRoleMutation(tripId: string | null | undefined) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (values: UpdateTripMemberRoleFormValues) => updateTripMemberRole(values),
+    onSuccess: (member) => {
+      queryClient.invalidateQueries({ queryKey: tripMembersQueryKey(tripId ?? member.tripId) });
     },
   });
 }

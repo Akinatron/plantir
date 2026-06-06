@@ -5,6 +5,7 @@ import {
   CreateTripFormValues,
   TripSettingsFormValues,
   confirmTripSchema,
+  updateTripMemberRoleSchema,
 } from '../lib/validation/trip';
 import { Trip, TripMember, TripMemberRow, TripRow, mapTripMemberRow, mapTripRow } from '../types/trip';
 
@@ -146,6 +147,64 @@ export async function confirmTrip(values: ConfirmTripFormValues): Promise<Trip> 
   return mapTripRow(data);
 }
 
+export async function closeTrip(tripId: string): Promise<Trip> {
+  const supabase = getSupabaseClient();
+  const { data, error } = await supabase
+    .from('trips')
+    .update({
+      status: 'closed',
+      closed_at: new Date().toISOString(),
+    })
+    .eq('id', tripId)
+    .select(tripSelect)
+    .single<TripRow>();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  await logNonBlocking(() =>
+    logTripActivity({
+      tripId: data.id,
+      eventType: 'trip_closed',
+      metadata: {
+        title: data.title,
+      },
+    }),
+  );
+
+  return mapTripRow(data);
+}
+
+export async function reopenTrip(tripId: string): Promise<Trip> {
+  const supabase = getSupabaseClient();
+  const { data, error } = await supabase
+    .from('trips')
+    .update({
+      status: 'planning',
+      closed_at: null,
+    })
+    .eq('id', tripId)
+    .select(tripSelect)
+    .single<TripRow>();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  await logNonBlocking(() =>
+    logTripActivity({
+      tripId: data.id,
+      eventType: 'trip_reopened',
+      metadata: {
+        title: data.title,
+      },
+    }),
+  );
+
+  return mapTripRow(data);
+}
+
 export async function getTripMembers(tripId: string): Promise<TripMember[]> {
   const supabase = getSupabaseClient();
   const { data, error } = await supabase
@@ -161,6 +220,38 @@ export async function getTripMembers(tripId: string): Promise<TripMember[]> {
   }
 
   return (data ?? []).map(mapTripMemberRow);
+}
+
+export async function updateTripMemberRole(values: {
+  memberId: string;
+  role: 'admin' | 'member';
+}): Promise<TripMember> {
+  const parsed = updateTripMemberRoleSchema.parse(values);
+  const supabase = getSupabaseClient();
+  const { data, error } = await supabase
+    .from('trip_members')
+    .update({ role: parsed.role })
+    .eq('id', parsed.memberId)
+    .neq('role', 'owner')
+    .select('id, trip_id, user_id, role, status, joined_at, profiles(display_name, avatar_url)')
+    .single<TripMemberRow>();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  await logNonBlocking(() =>
+    logTripActivity({
+      tripId: data.trip_id,
+      eventType: 'member_role_updated',
+      metadata: {
+        user_id: data.user_id,
+        role: data.role,
+      },
+    }),
+  );
+
+  return mapTripMemberRow(data);
 }
 
 export function getTripNextAction(trip: Trip): string {
