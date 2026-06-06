@@ -10,9 +10,11 @@ import { PlaceholderState } from '../../../../src/components/feedback/Placeholde
 import { AppText } from '../../../../src/components/ui/AppText';
 import { Button } from '../../../../src/components/ui/Button';
 import { Screen } from '../../../../src/components/ui/Screen';
+import { StateBanner } from '../../../../src/components/ui/StateBanner';
 import { TextField } from '../../../../src/components/ui/TextField';
 import { useAuth } from '../../../../src/features/auth/AuthProvider';
 import { useCreatePlanningNoteMutation, usePlanningNotesQuery } from '../../../../src/hooks/usePlanning';
+import { useTripQuery } from '../../../../src/hooks/useTrips';
 import {
   CreatePlanningNoteFormValues,
   ParsedCreatePlanningNoteFormValues,
@@ -23,6 +25,7 @@ import { PlanningNote } from '../../../../src/types/planning';
 export default function NotesScreen() {
   const { tripId } = useLocalSearchParams<{ tripId: string }>();
   const { user } = useAuth();
+  const tripQuery = useTripQuery(tripId);
   const notesQuery = usePlanningNotesQuery(tripId);
   const createMutation = useCreatePlanningNoteMutation(tripId);
   const {
@@ -48,13 +51,15 @@ export default function NotesScreen() {
     }
   }, [setValue, user?.id]);
 
-  if (notesQuery.isLoading) {
+  if (tripQuery.isLoading || notesQuery.isLoading) {
     return (
       <Screen>
         <LoadingState label="Loading notes..." />
       </Screen>
     );
   }
+
+  const isReadOnly = Boolean(tripQuery.data?.closedAt);
 
   const onSubmit = handleSubmit(async (values) => {
     await createMutation.mutateAsync({
@@ -80,6 +85,12 @@ export default function NotesScreen() {
               <AppText variant="eyebrow">Notes</AppText>
               <AppText variant="title">Shared notes</AppText>
             </View>
+            {isReadOnly ? (
+              <StateBanner title="Trip is read-only" message="Notes cannot be added while this trip is closed." tone="locked" />
+            ) : null}
+            {tripQuery.error ? (
+              <InlineNotice title="Trip failed to load" message={tripQuery.error.message} tone="error" />
+            ) : null}
             {notesQuery.error ? (
               <InlineNotice title="Notes failed to load" message={notesQuery.error.message} tone="error" />
             ) : null}
@@ -97,6 +108,7 @@ export default function NotesScreen() {
                     onBlur={onBlur}
                     onChangeText={(text) => onChange(text)}
                     value={value ?? ''}
+                    editable={!isReadOnly}
                     error={errors.title?.message}
                   />
                 )}
@@ -111,6 +123,7 @@ export default function NotesScreen() {
                     onBlur={onBlur}
                     onChangeText={onChange}
                     value={value}
+                    editable={!isReadOnly}
                     error={errors.body?.message}
                   />
                 )}
@@ -118,7 +131,7 @@ export default function NotesScreen() {
               <Button
                 label={createMutation.isPending ? 'Saving...' : 'Add note'}
                 onPress={onSubmit}
-                disabled={!user || createMutation.isPending}
+                disabled={!user || isReadOnly || createMutation.isPending}
               />
             </View>
           </View>

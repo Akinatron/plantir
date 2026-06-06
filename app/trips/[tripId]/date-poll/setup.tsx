@@ -4,16 +4,18 @@ import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
-import { InlineNotice } from '../../../../src/components/feedback/InlineNotice';
 import { LoadingState } from '../../../../src/components/feedback/LoadingState';
 import { AppText } from '../../../../src/components/ui/AppText';
 import { Button } from '../../../../src/components/ui/Button';
 import { CalendarDateField, CalendarDateTimeField } from '../../../../src/components/ui/CalendarDateField';
+import { ErrorState } from '../../../../src/components/ui/ErrorState';
 import { Screen } from '../../../../src/components/ui/Screen';
+import { StateBanner } from '../../../../src/components/ui/StateBanner';
 import { TextField } from '../../../../src/components/ui/TextField';
 import { useAuth } from '../../../../src/features/auth/AuthProvider';
+import { canManageTrip } from '../../../../src/features/trip-admin/adminUtils';
 import { useCreateDatePollMutation, useDatePollBundleQuery } from '../../../../src/hooks/useDatePoll';
-import { useTripMembersQuery } from '../../../../src/hooks/useTrips';
+import { useTripMembersQuery, useTripQuery } from '../../../../src/hooks/useTrips';
 import { DatePollSetupFormValues, datePollSetupSchema } from '../../../../src/lib/validation/datePoll';
 import { TripMember } from '../../../../src/types/trip';
 
@@ -21,6 +23,7 @@ export default function DatePollSetupScreen() {
   const router = useRouter();
   const { tripId } = useLocalSearchParams<{ tripId: string }>();
   const { user } = useAuth();
+  const tripQuery = useTripQuery(tripId);
   const membersQuery = useTripMembersQuery(tripId);
   const datePollQuery = useDatePollBundleQuery(tripId);
   const createMutation = useCreateDatePollMutation(user?.id);
@@ -52,7 +55,7 @@ export default function DatePollSetupScreen() {
     router.replace(`/trips/${tripId}/date-poll/vote?pollId=${poll.id}`);
   });
 
-  if (membersQuery.isLoading || datePollQuery.isLoading) {
+  if (tripQuery.isLoading || membersQuery.isLoading || datePollQuery.isLoading) {
     return (
       <Screen>
         <LoadingState label="Loading date poll setup..." />
@@ -60,7 +63,47 @@ export default function DatePollSetupScreen() {
     );
   }
 
+  if (tripQuery.isError) {
+    return (
+      <Screen centered>
+        <ErrorState title="Trip failed to load" message={tripQuery.error.message} />
+      </Screen>
+    );
+  }
+
+  if (membersQuery.isError) {
+    return (
+      <Screen centered>
+        <ErrorState title="Members failed to load" message={membersQuery.error.message} />
+      </Screen>
+    );
+  }
+
+  if (datePollQuery.isError) {
+    return (
+      <Screen centered>
+        <ErrorState title="Date poll failed to load" message={datePollQuery.error.message} />
+      </Screen>
+    );
+  }
+
   const existingPoll = datePollQuery.data?.poll;
+  const canManage = canManageTrip(user?.id, membersQuery.data ?? []);
+  const isReadOnly = Boolean(tripQuery.data?.closedAt);
+  const formDisabled =
+    !canManage || isReadOnly || createMutation.isPending || Boolean(existingPoll && existingPoll.status !== 'closed');
+
+  if (!canManage) {
+    return (
+      <Screen centered>
+        <StateBanner
+          title="Permission denied"
+          message="Only the owner or an admin can configure the date poll."
+          tone="locked"
+        />
+      </Screen>
+    );
+  }
 
   return (
     <Screen>
@@ -68,19 +111,27 @@ export default function DatePollSetupScreen() {
         <View style={styles.header}>
           <AppText variant="eyebrow">Date poll</AppText>
           <AppText variant="title">Set the voting window</AppText>
-          <AppText>Members will mark each allowed travel day as prefer, available, maybe, or unavailable.</AppText>
+          <AppText>Members will mark the travel days they can attend. Unmarked days stay unavailable.</AppText>
         </View>
 
+        {isReadOnly ? (
+          <StateBanner
+            title="Trip is read-only"
+            message="Date poll setup is locked while this trip is closed."
+            tone="locked"
+          />
+        ) : null}
+
         {existingPoll && existingPoll.status !== 'closed' ? (
-          <InlineNotice
+          <StateBanner
             title="Date poll already active"
             message="Use the vote or results screen for the current poll."
-            tone="success"
+            tone="info"
           />
         ) : null}
 
         {createMutation.error ? (
-          <InlineNotice title="Date poll setup failed" message={createMutation.error.message} tone="error" />
+          <StateBanner title="Date poll setup failed" message={createMutation.error.message} tone="danger" />
         ) : null}
 
         <View style={styles.form}>
@@ -93,6 +144,7 @@ export default function DatePollSetupScreen() {
                 value={value}
                 onChange={(nextDate) => onChange(nextDate ?? '')}
                 allowClear={false}
+                disabled={formDisabled}
                 error={errors.allowedStartDate?.message}
               />
             )}
@@ -106,6 +158,7 @@ export default function DatePollSetupScreen() {
                 value={value}
                 onChange={(nextDate) => onChange(nextDate ?? '')}
                 allowClear={false}
+                disabled={formDisabled}
                 error={errors.allowedEndDate?.message}
               />
             )}
@@ -120,6 +173,7 @@ export default function DatePollSetupScreen() {
                 onBlur={onBlur}
                 onChangeText={(text) => onChange(Number(text))}
                 value={String(value)}
+                editable={!formDisabled}
                 error={errors.minTripDays?.message}
               />
             )}
@@ -134,6 +188,7 @@ export default function DatePollSetupScreen() {
                 onBlur={onBlur}
                 onChangeText={(text) => onChange(Number(text))}
                 value={String(value)}
+                editable={!formDisabled}
                 error={errors.maxTripDays?.message}
               />
             )}
@@ -149,6 +204,7 @@ export default function DatePollSetupScreen() {
                 onBlur={onBlur}
                 onChangeText={(text) => onChange(text.trim().length > 0 ? Number(text) : null)}
                 value={value === null ? '' : String(value)}
+                editable={!formDisabled}
                 error={errors.preferredDurationDays?.message}
               />
             )}
@@ -161,6 +217,7 @@ export default function DatePollSetupScreen() {
                 label="Voting deadline"
                 value={value ?? ''}
                 onChange={onChange}
+                disabled={formDisabled}
                 error={errors.votingDeadlineAt?.message}
               />
             )}
@@ -175,6 +232,7 @@ export default function DatePollSetupScreen() {
               key={member.id}
               member={member}
               selected={requiredMemberIds.includes(member.userId)}
+              disabled={formDisabled}
               onToggle={() => {
                 setRequiredMemberIds((current) =>
                   current.includes(member.userId)
@@ -189,7 +247,7 @@ export default function DatePollSetupScreen() {
         <Button
           label={createMutation.isPending ? 'Starting...' : 'Start date poll'}
           onPress={onSubmit}
-          disabled={!user || createMutation.isPending || Boolean(existingPoll && existingPoll.status !== 'closed')}
+          disabled={!user || formDisabled}
         />
       </ScrollView>
     </Screen>
@@ -199,14 +257,21 @@ export default function DatePollSetupScreen() {
 function RequiredMemberRow({
   member,
   selected,
+  disabled,
   onToggle,
 }: {
   member: TripMember;
   selected: boolean;
+  disabled: boolean;
   onToggle: () => void;
 }) {
   return (
-    <Pressable style={[styles.memberRow, selected && styles.memberRowSelected]} onPress={onToggle}>
+    <Pressable
+      style={[styles.memberRow, selected && styles.memberRowSelected, disabled && styles.memberRowDisabled]}
+      onPress={onToggle}
+      disabled={disabled}
+      accessibilityState={{ disabled, selected }}
+    >
       <View>
         <AppText variant="subtitle">{member.displayName ?? 'Unnamed member'}</AppText>
         <AppText>{member.role}</AppText>
@@ -242,5 +307,8 @@ const styles = StyleSheet.create({
   },
   memberRowSelected: {
     borderColor: '#0F6B57',
+  },
+  memberRowDisabled: {
+    opacity: 0.55,
   },
 });

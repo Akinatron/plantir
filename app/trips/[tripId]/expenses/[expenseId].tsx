@@ -4,6 +4,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { LoadingState } from '../../../../src/components/feedback/LoadingState';
 import { PlaceholderState } from '../../../../src/components/feedback/PlaceholderState';
 import { AppText } from '../../../../src/components/ui/AppText';
+import { ErrorState } from '../../../../src/components/ui/ErrorState';
 import { Screen } from '../../../../src/components/ui/Screen';
 import { useExpenseDetailQuery } from '../../../../src/hooks/useExpenses';
 import { useTripMembersQuery } from '../../../../src/hooks/useTrips';
@@ -18,6 +19,22 @@ export default function ExpenseDetailScreen() {
     return (
       <Screen>
         <LoadingState label="Loading expense..." />
+      </Screen>
+    );
+  }
+
+  if (detailQuery.isError) {
+    return (
+      <Screen centered>
+        <ErrorState title="Expense failed to load" message={detailQuery.error.message} />
+      </Screen>
+    );
+  }
+
+  if (membersQuery.isError) {
+    return (
+      <Screen centered>
+        <ErrorState title="Members failed to load" message={membersQuery.error.message} />
       </Screen>
     );
   }

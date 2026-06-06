@@ -7,6 +7,7 @@ import { Card } from '../../components/ui/Card';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { ErrorState } from '../../components/ui/ErrorState';
 import { LoadingState } from '../../components/ui/LoadingState';
+import { StateBanner } from '../../components/ui/StateBanner';
 import { colors } from '../../design/theme';
 import { spacing } from '../../design/spacing';
 import { Expense } from '../../types/expense';
@@ -18,10 +19,20 @@ type ExpensesTabProps = {
   expenses: Expense[];
   isLoading: boolean;
   error?: Error | null;
+  canAddExpense: boolean;
+  readOnly: boolean;
   onAddExpense: () => void;
 };
 
-export function ExpensesTab({ tripId, expenses, isLoading, error, onAddExpense }: ExpensesTabProps) {
+export function ExpensesTab({
+  tripId,
+  expenses,
+  isLoading,
+  error,
+  canAddExpense,
+  readOnly,
+  onAddExpense,
+}: ExpensesTabProps) {
   const grouped = groupByExpenseDate(expenses);
 
   if (isLoading) {
@@ -41,11 +52,22 @@ export function ExpensesTab({ tripId, expenses, isLoading, error, onAddExpense }
           <Button
             label="Add expense"
             fullWidth={false}
+            disabled={!canAddExpense || readOnly}
             onPress={onAddExpense}
             leftIcon={<Plus color={colors.primaryText} size={18} />}
           />
         </View>
       </Card>
+
+      {readOnly ? (
+        <StateBanner title="Trip is read-only" message="Expenses cannot be added while this trip is closed." tone="locked" />
+      ) : !canAddExpense ? (
+        <StateBanner
+          title="Permission denied"
+          message="The owner or admin has disabled member-added expenses."
+          tone="locked"
+        />
+      ) : null}
 
       {grouped.length === 0 ? (
         <EmptyState title="No expenses yet" description="Add shared costs as the trip takes shape." />

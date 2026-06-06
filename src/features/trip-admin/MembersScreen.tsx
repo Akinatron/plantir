@@ -10,6 +10,7 @@ import { ErrorState } from '../../components/ui/ErrorState';
 import { LoadingState } from '../../components/ui/LoadingState';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { Screen } from '../../components/ui/Screen';
+import { StateBanner } from '../../components/ui/StateBanner';
 import { AppText } from '../../components/ui/AppText';
 import { colors } from '../../design/theme';
 import { spacing } from '../../design/spacing';
@@ -40,18 +41,23 @@ export function MembersScreen({ tripId }: MembersScreenProps) {
         title="Trip members"
         description="See who has access and manage roles for this trip."
       >
-        <Link href={`/trips/${tripId}/invite`} asChild>
-          <Button
-            label="Invite"
-            fullWidth={false}
-            leftIcon={<Link2 color={colors.primaryText} size={18} />}
-          />
-        </Link>
+        {canManage ? (
+          <Link href={`/trips/${tripId}/invite`} asChild>
+            <Button
+              label="Invite"
+              fullWidth={false}
+              leftIcon={<Link2 color={colors.primaryText} size={18} />}
+            />
+          </Link>
+        ) : null}
       </PageHeader>
 
       {membersQuery.error ? <ErrorState title="Members failed to load" message={membersQuery.error.message} /> : null}
       {updateRoleMutation.isError ? (
         <ErrorState title="Role update failed" message={updateRoleMutation.error.message} />
+      ) : null}
+      {updateRoleMutation.isSuccess ? (
+        <StateBanner title="Role updated" message="Member permissions were saved." tone="success" />
       ) : null}
 
       <Card variant="soft">
@@ -63,6 +69,14 @@ export function MembersScreen({ tripId }: MembersScreenProps) {
           </View>
         </View>
       </Card>
+
+      {!canManage ? (
+        <StateBanner
+          title="Permission denied"
+          message="Only the owner or an admin can invite people or change roles."
+          tone="locked"
+        />
+      ) : null}
 
       {members.length === 0 ? (
         <EmptyState title="No members yet" description="Create or share an invite link to bring people in." />

@@ -10,6 +10,7 @@ import { PlaceholderState } from '../../../../src/components/feedback/Placeholde
 import { AppText } from '../../../../src/components/ui/AppText';
 import { Button } from '../../../../src/components/ui/Button';
 import { Screen } from '../../../../src/components/ui/Screen';
+import { StateBanner } from '../../../../src/components/ui/StateBanner';
 import { TextField } from '../../../../src/components/ui/TextField';
 import { useAuth } from '../../../../src/features/auth/AuthProvider';
 import {
@@ -17,7 +18,7 @@ import {
   usePackingItemsQuery,
   useTogglePackingItemMutation,
 } from '../../../../src/hooks/usePlanning';
-import { useTripMembersQuery } from '../../../../src/hooks/useTrips';
+import { useTripMembersQuery, useTripQuery } from '../../../../src/hooks/useTrips';
 import {
   CreatePackingItemFormValues,
   ParsedCreatePackingItemFormValues,
@@ -29,6 +30,7 @@ import { TripMember } from '../../../../src/types/trip';
 export default function PackingScreen() {
   const { tripId } = useLocalSearchParams<{ tripId: string }>();
   const { user } = useAuth();
+  const tripQuery = useTripQuery(tripId);
   const itemsQuery = usePackingItemsQuery(tripId);
   const membersQuery = useTripMembersQuery(tripId);
   const createMutation = useCreatePackingItemMutation(tripId);
@@ -57,7 +59,7 @@ export default function PackingScreen() {
     }
   }, [setValue, user?.id]);
 
-  if (itemsQuery.isLoading || membersQuery.isLoading) {
+  if (tripQuery.isLoading || itemsQuery.isLoading || membersQuery.isLoading) {
     return (
       <Screen>
         <LoadingState label="Loading list..." />
@@ -66,6 +68,8 @@ export default function PackingScreen() {
   }
 
   const members = membersQuery.data ?? [];
+  const isReadOnly = Boolean(tripQuery.data?.closedAt);
+  const formDisabled = isReadOnly || createMutation.isPending;
   const onSubmit = handleSubmit(async (values) => {
     await createMutation.mutateAsync({
       ...values,
@@ -90,8 +94,21 @@ export default function PackingScreen() {
               <AppText variant="eyebrow">Shared list</AppText>
               <AppText variant="title">Packing</AppText>
             </View>
+            {isReadOnly ? (
+              <StateBanner
+                title="Trip is read-only"
+                message="Packing items cannot be changed while this trip is closed."
+                tone="locked"
+              />
+            ) : null}
+            {tripQuery.error ? (
+              <InlineNotice title="Trip failed to load" message={tripQuery.error.message} tone="error" />
+            ) : null}
             {itemsQuery.error ? (
               <InlineNotice title="List failed to load" message={itemsQuery.error.message} tone="error" />
+            ) : null}
+            {membersQuery.error ? (
+              <InlineNotice title="Members failed to load" message={membersQuery.error.message} tone="error" />
             ) : null}
             {createMutation.error ? (
               <InlineNotice title="Item failed to save" message={createMutation.error.message} tone="error" />
@@ -106,7 +123,14 @@ export default function PackingScreen() {
                 control={control}
                 name="label"
                 render={({ field: { onBlur, onChange, value } }) => (
-                  <TextField label="Item" onBlur={onBlur} onChangeText={onChange} value={value} error={errors.label?.message} />
+                  <TextField
+                    label="Item"
+                    onBlur={onBlur}
+                    onChangeText={onChange}
+                    value={value}
+                    editable={!formDisabled}
+                    error={errors.label?.message}
+                  />
                 )}
               />
               <Controller
@@ -119,6 +143,7 @@ export default function PackingScreen() {
                     onBlur={onBlur}
                     onChangeText={onChange}
                     value={value}
+                    editable={!formDisabled}
                     error={errors.quantity?.message}
                   />
                 )}
@@ -126,7 +151,9 @@ export default function PackingScreen() {
               <View style={styles.assigneeList}>
                 <AppText variant="eyebrow">Owner</AppText>
                 <Pressable
-                  style={[styles.memberRow, assignedTo === null && styles.memberRowSelected]}
+                  style={[styles.memberRow, assignedTo === null && styles.memberRowSelected, formDisabled && styles.disabled]}
+                  disabled={formDisabled}
+                  accessibilityState={{ disabled: formDisabled, selected: assignedTo === null }}
                   onPress={() => setValue('assignedTo', null, { shouldDirty: true })}
                 >
                   <AppText>Anyone</AppText>
@@ -137,6 +164,7 @@ export default function PackingScreen() {
                     key={member.id}
                     member={member}
                     selected={assignedTo === member.userId}
+                    disabled={formDisabled}
                     onPress={() => setValue('assignedTo', member.userId, { shouldDirty: true })}
                   />
                 ))}
@@ -144,7 +172,7 @@ export default function PackingScreen() {
               <Button
                 label={createMutation.isPending ? 'Saving...' : 'Add item'}
                 onPress={onSubmit}
-                disabled={!user || createMutation.isPending}
+                disabled={!user || formDisabled}
               />
             </View>
           </View>
@@ -157,7 +185,7 @@ export default function PackingScreen() {
           <PackingItemCard
             item={item}
             members={members}
-            disabled={toggleMutation.isPending}
+            disabled={isReadOnly || toggleMutation.isPending}
             onToggle={() => toggleMutation.mutate(item)}
           />
         )}
@@ -169,14 +197,21 @@ export default function PackingScreen() {
 function MemberChoice({
   member,
   selected,
+  disabled,
   onPress,
 }: {
   member: TripMember;
   selected: boolean;
+  disabled: boolean;
   onPress: () => void;
 }) {
   return (
-    <Pressable style={[styles.memberRow, selected && styles.memberRowSelected]} onPress={onPress}>
+    <Pressable
+      style={[styles.memberRow, selected && styles.memberRowSelected, disabled && styles.disabled]}
+      disabled={disabled}
+      accessibilityState={{ disabled, selected }}
+      onPress={onPress}
+    >
       <AppText>{member.displayName ?? 'Unnamed member'}</AppText>
       <AppText>{selected ? 'Selected' : 'Select'}</AppText>
     </Pressable>
@@ -242,6 +277,9 @@ const styles = StyleSheet.create({
   },
   memberRowSelected: {
     borderColor: '#0F6B57',
+  },
+  disabled: {
+    opacity: 0.55,
   },
   card: {
     backgroundColor: '#FFFFFF',

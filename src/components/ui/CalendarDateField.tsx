@@ -14,6 +14,7 @@ type CalendarDateFieldProps = {
   onChange: (value: string | null) => void;
   error?: string;
   allowClear?: boolean;
+  disabled?: boolean;
 };
 
 type CalendarDateTimeFieldProps = {
@@ -22,6 +23,7 @@ type CalendarDateTimeFieldProps = {
   onChange: (value: string | null) => void;
   error?: string;
   allowClear?: boolean;
+  disabled?: boolean;
 };
 
 const weekDayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -33,6 +35,7 @@ export function CalendarDateField({
   onChange,
   error,
   allowClear = true,
+  disabled = false,
 }: CalendarDateFieldProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [visibleMonth, setVisibleMonth] = useState(() => startOfMonth(parseIsoDate(value) ?? new Date()));
@@ -44,8 +47,10 @@ export function CalendarDateField({
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={value ? `${label}: ${formatDisplayDate(value)}` : `${label}: no date selected`}
+        accessibilityState={{ disabled }}
+        disabled={disabled}
         onPress={() => setIsOpen((current) => !current)}
-        style={[styles.valueButton, error && styles.valueButtonError]}
+        style={[styles.valueButton, error && styles.valueButtonError, disabled && styles.disabled]}
       >
         <AppText style={[styles.valueText, !value && styles.placeholder]}>
           {value ? formatDisplayDate(value) : 'Select date'}
@@ -53,7 +58,7 @@ export function CalendarDateField({
       </Pressable>
       {error ? <AppText style={styles.error}>{error}</AppText> : null}
 
-      {isOpen ? (
+      {isOpen && !disabled ? (
         <View style={styles.calendarPanel}>
           <View style={styles.monthHeader}>
             <Button
@@ -148,6 +153,7 @@ export function CalendarDateTimeField({
   onChange,
   error,
   allowClear = true,
+  disabled = false,
 }: CalendarDateTimeFieldProps) {
   const dateValue = value ? formatLocalDate(value) : null;
   const timeValue = value ? formatLocalTime(value) : '12:00';
@@ -159,6 +165,7 @@ export function CalendarDateTimeField({
         value={dateValue}
         error={error}
         allowClear={allowClear}
+        disabled={disabled}
         onChange={(nextDate) => {
           onChange(nextDate ? buildIsoDateTime(nextDate, timeValue) : null);
         }}
@@ -168,6 +175,7 @@ export function CalendarDateTimeField({
           label="Time"
           placeholder="12:00"
           value={timeValue}
+          editable={!disabled}
           onChangeText={(nextTime) => {
             if (isValidTime(nextTime)) {
               onChange(buildIsoDateTime(dateValue, nextTime));
@@ -274,6 +282,10 @@ const styles = StyleSheet.create({
   },
   valueButtonError: {
     borderColor: colors.danger,
+  },
+  disabled: {
+    backgroundColor: colors.surfaceSoft,
+    opacity: 0.72,
   },
   valueText: {
     ...typography.body,

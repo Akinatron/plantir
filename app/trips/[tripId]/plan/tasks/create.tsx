@@ -9,11 +9,13 @@ import { LoadingState } from '../../../../../src/components/feedback/LoadingStat
 import { AppText } from '../../../../../src/components/ui/AppText';
 import { Button } from '../../../../../src/components/ui/Button';
 import { CalendarDateTimeField } from '../../../../../src/components/ui/CalendarDateField';
+import { ErrorState } from '../../../../../src/components/ui/ErrorState';
 import { Screen } from '../../../../../src/components/ui/Screen';
+import { StateBanner } from '../../../../../src/components/ui/StateBanner';
 import { TextField } from '../../../../../src/components/ui/TextField';
 import { useAuth } from '../../../../../src/features/auth/AuthProvider';
 import { useCreateTaskMutation } from '../../../../../src/hooks/usePlanning';
-import { useTripMembersQuery } from '../../../../../src/hooks/useTrips';
+import { useTripMembersQuery, useTripQuery } from '../../../../../src/hooks/useTrips';
 import {
   CreateTaskFormValues,
   ParsedCreateTaskFormValues,
@@ -25,6 +27,7 @@ export default function CreateTaskScreen() {
   const router = useRouter();
   const { tripId } = useLocalSearchParams<{ tripId: string }>();
   const { user } = useAuth();
+  const tripQuery = useTripQuery(tripId);
   const membersQuery = useTripMembersQuery(tripId);
   const createMutation = useCreateTaskMutation(tripId);
   const {
@@ -51,13 +54,32 @@ export default function CreateTaskScreen() {
     }
   }, [setValue, user?.id]);
 
-  if (membersQuery.isLoading) {
+  if (tripQuery.isLoading || membersQuery.isLoading) {
     return (
       <Screen>
         <LoadingState label="Loading members..." />
       </Screen>
     );
   }
+
+  if (tripQuery.isError) {
+    return (
+      <Screen centered>
+        <ErrorState title="Trip failed to load" message={tripQuery.error.message} />
+      </Screen>
+    );
+  }
+
+  if (membersQuery.isError) {
+    return (
+      <Screen centered>
+        <ErrorState title="Members failed to load" message={membersQuery.error.message} />
+      </Screen>
+    );
+  }
+
+  const isReadOnly = Boolean(tripQuery.data?.closedAt);
+  const formDisabled = isReadOnly || createMutation.isPending;
 
   const onSubmit = handleSubmit(async (values) => {
     await createMutation.mutateAsync({
@@ -76,6 +98,10 @@ export default function CreateTaskScreen() {
           <AppText variant="title">Create task</AppText>
         </View>
 
+        {isReadOnly ? (
+          <StateBanner title="Trip is read-only" message="Tasks cannot be created while this trip is closed." tone="locked" />
+        ) : null}
+
         {createMutation.error ? (
           <InlineNotice title="Task failed to save" message={createMutation.error.message} tone="error" />
         ) : null}
@@ -85,7 +111,14 @@ export default function CreateTaskScreen() {
             control={control}
             name="title"
             render={({ field: { onBlur, onChange, value } }) => (
-              <TextField label="Title" onBlur={onBlur} onChangeText={onChange} value={value} error={errors.title?.message} />
+              <TextField
+                label="Title"
+                onBlur={onBlur}
+                onChangeText={onChange}
+                value={value}
+                editable={!formDisabled}
+                error={errors.title?.message}
+              />
             )}
           />
           <Controller
@@ -98,6 +131,7 @@ export default function CreateTaskScreen() {
                 onBlur={onBlur}
                 onChangeText={(text) => onChange(text)}
                 value={value ?? ''}
+                editable={!formDisabled}
                 error={errors.description?.message}
               />
             )}
@@ -110,6 +144,7 @@ export default function CreateTaskScreen() {
                 label="Due date"
                 value={value ?? ''}
                 onChange={onChange}
+                disabled={formDisabled}
                 error={errors.dueAt?.message}
               />
             )}
@@ -119,7 +154,9 @@ export default function CreateTaskScreen() {
         <View style={styles.section}>
           <AppText variant="subtitle">Assignee</AppText>
           <Pressable
-            style={[styles.memberRow, assignedTo === null && styles.memberRowSelected]}
+            style={[styles.memberRow, assignedTo === null && styles.memberRowSelected, formDisabled && styles.disabled]}
+            disabled={formDisabled}
+            accessibilityState={{ disabled: formDisabled, selected: assignedTo === null }}
             onPress={() => setValue('assignedTo', null, { shouldDirty: true })}
           >
             <AppText>Unassigned</AppText>
@@ -130,6 +167,7 @@ export default function CreateTaskScreen() {
               key={member.id}
               member={member}
               selected={assignedTo === member.userId}
+              disabled={formDisabled}
               onPress={() => setValue('assignedTo', member.userId, { shouldDirty: true })}
             />
           ))}
@@ -139,7 +177,7 @@ export default function CreateTaskScreen() {
         <Button
           label={createMutation.isPending ? 'Saving...' : 'Save task'}
           onPress={onSubmit}
-          disabled={!user || createMutation.isPending}
+          disabled={!user || formDisabled}
         />
       </ScrollView>
     </Screen>
@@ -149,14 +187,21 @@ export default function CreateTaskScreen() {
 function SelectableMember({
   member,
   selected,
+  disabled,
   onPress,
 }: {
   member: TripMember;
   selected: boolean;
+  disabled: boolean;
   onPress: () => void;
 }) {
   return (
-    <Pressable style={[styles.memberRow, selected && styles.memberRowSelected]} onPress={onPress}>
+    <Pressable
+      style={[styles.memberRow, selected && styles.memberRowSelected, disabled && styles.disabled]}
+      disabled={disabled}
+      accessibilityState={{ disabled, selected }}
+      onPress={onPress}
+    >
       <View>
         <AppText variant="subtitle">{member.displayName ?? 'Unnamed member'}</AppText>
         <AppText>{member.role}</AppText>
@@ -192,5 +237,8 @@ const styles = StyleSheet.create({
   },
   memberRowSelected: {
     borderColor: '#0F6B57',
+  },
+  disabled: {
+    opacity: 0.55,
   },
 });

@@ -12,6 +12,7 @@ import { ErrorState } from '../../components/ui/ErrorState';
 import { LoadingState } from '../../components/ui/LoadingState';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { Screen } from '../../components/ui/Screen';
+import { StateBanner } from '../../components/ui/StateBanner';
 import { TextField } from '../../components/ui/TextField';
 import { AppText } from '../../components/ui/AppText';
 import { colors } from '../../design/theme';
@@ -21,9 +22,12 @@ import {
   useRevokeTripInviteMutation,
   useTripInvitesQuery,
 } from '../../hooks/useInvites';
+import { useTripMembersQuery, useTripQuery } from '../../hooks/useTrips';
 import { confirmAction } from '../../lib/ui/confirmAction';
 import { CreateInviteFormValues, createInviteSchema } from '../../lib/validation/trip';
 import { TripInvite } from '../../types/trip';
+import { useAuth } from '../auth/AuthProvider';
+import { canManageTrip } from './adminUtils';
 import { InviteRow } from './InviteRow';
 
 type InvitesScreenProps = {
@@ -31,6 +35,9 @@ type InvitesScreenProps = {
 };
 
 export function InvitesScreen({ tripId }: InvitesScreenProps) {
+  const { user } = useAuth();
+  const tripQuery = useTripQuery(tripId);
+  const membersQuery = useTripMembersQuery(tripId);
   const invitesQuery = useTripInvitesQuery(tripId);
   const createInviteMutation = useCreateTripInviteMutation();
   const revokeInviteMutation = useRevokeTripInviteMutation(tripId);
@@ -78,8 +85,31 @@ export function InvitesScreen({ tripId }: InvitesScreenProps) {
     setCopied(false);
   };
 
-  if (invitesQuery.isLoading) {
+  const canManage = canManageTrip(user?.id, membersQuery.data ?? []);
+  const isReadOnly = Boolean(tripQuery.data?.closedAt);
+
+  if (invitesQuery.isLoading || tripQuery.isLoading || membersQuery.isLoading) {
     return <LoadingState label="Loading invites..." />;
+  }
+
+  if (tripQuery.isError) {
+    return <ErrorState title="Trip failed to load" message={tripQuery.error.message} />;
+  }
+
+  if (membersQuery.isError) {
+    return <ErrorState title="Members failed to load" message={membersQuery.error.message} />;
+  }
+
+  if (!canManage) {
+    return (
+      <Screen centered>
+        <StateBanner
+          title="Permission denied"
+          message="Only the owner or an admin can create, revoke, or regenerate invite links."
+          tone="locked"
+        />
+      </Screen>
+    );
   }
 
   return (
@@ -97,6 +127,13 @@ export function InvitesScreen({ tripId }: InvitesScreenProps) {
         <ErrorState title="Invite revocation failed" message={revokeInviteMutation.error.message} />
       ) : null}
       {invitesQuery.error ? <ErrorState title="Invites failed to load" message={invitesQuery.error.message} /> : null}
+      {isReadOnly ? (
+        <StateBanner
+          title="Trip is read-only"
+          message="Reopen the trip before changing invite links."
+          tone="locked"
+        />
+      ) : null}
 
       <Card variant="elevated">
         <View style={styles.formHeader}>
@@ -115,6 +152,7 @@ export function InvitesScreen({ tripId }: InvitesScreenProps) {
               value={field.value}
               onChange={field.onChange}
               error={errors.expiresAt?.message}
+              disabled={isReadOnly}
             />
           )}
         />
@@ -129,10 +167,16 @@ export function InvitesScreen({ tripId }: InvitesScreenProps) {
               onChangeText={(text) => field.onChange(text.trim().length > 0 ? Number(text) : null)}
               value={field.value === null ? '' : String(field.value)}
               error={errors.maxUses?.message}
+              editable={!isReadOnly}
             />
           )}
         />
-        <Button label="Create invite" loading={createInviteMutation.isPending} onPress={createInvite} />
+        <Button
+          label="Create invite"
+          loading={createInviteMutation.isPending}
+          disabled={isReadOnly || createInviteMutation.isPending}
+          onPress={createInvite}
+        />
       </Card>
 
       {createdUrl ? (
@@ -161,7 +205,7 @@ export function InvitesScreen({ tripId }: InvitesScreenProps) {
             <InviteRow
               key={invite.id}
               invite={invite}
-              isBusy={createInviteMutation.isPending || revokeInviteMutation.isPending}
+              isBusy={isReadOnly || createInviteMutation.isPending || revokeInviteMutation.isPending}
               onRegenerate={() =>
                 confirmAction({
                   title: 'Regenerate invite?',

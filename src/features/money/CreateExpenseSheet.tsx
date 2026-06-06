@@ -12,16 +12,18 @@ import { Card } from '../../components/ui/Card';
 import { TextArea } from '../../components/ui/TextArea';
 import { TextField } from '../../components/ui/TextField';
 import { AppText } from '../../components/ui/AppText';
+import { StateBanner } from '../../components/ui/StateBanner';
 import { colors } from '../../design/theme';
 import { radius, spacing } from '../../design/spacing';
 import { useCreateExpenseMutation } from '../../hooks/useExpenses';
-import { useTripMembersQuery } from '../../hooks/useTrips';
+import { useTripMembersQuery, useTripQuery } from '../../hooks/useTrips';
 import {
   CreateExpenseFormValues,
   ParsedCreateExpenseFormValues,
   createExpenseSchema,
 } from '../../lib/validation/expense';
 import { TripMember } from '../../types/trip';
+import { canManageTrip } from '../trip-admin/adminUtils';
 
 type CreateExpenseSheetProps = {
   tripId: string;
@@ -39,6 +41,7 @@ export function CreateExpenseSheet({
   onCreated,
 }: CreateExpenseSheetProps) {
   const { user } = useAuth();
+  const tripQuery = useTripQuery(tripId);
   const membersQuery = useTripMembersQuery(tripId);
   const createMutation = useCreateExpenseMutation(tripId);
   const members = useMemo(() => membersQuery.data ?? [], [membersQuery.data]);
@@ -69,6 +72,10 @@ export function CreateExpenseSheet({
     control,
     name: ['paidByUserId', 'excludedUserIds'],
   });
+  const canManage = canManageTrip(user?.id, members);
+  const isReadOnly = Boolean(tripQuery.data?.closedAt);
+  const canCreateExpense = Boolean(tripQuery.data && (tripQuery.data.memberCanCreateExpenses || canManage));
+  const formDisabled = isReadOnly || !canCreateExpense || createMutation.isPending;
 
   useEffect(() => {
     if (user?.id) {
@@ -108,7 +115,17 @@ export function CreateExpenseSheet({
 
   const content = (
     <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-      {membersQuery.isLoading ? <AppText>Loading members...</AppText> : null}
+      {membersQuery.isLoading || tripQuery.isLoading ? <AppText>Loading trip details...</AppText> : null}
+      {isReadOnly ? (
+        <StateBanner title="Trip is read-only" message="Expenses cannot be added while this trip is closed." tone="locked" />
+      ) : null}
+      {!isReadOnly && tripQuery.data && !canCreateExpense ? (
+        <StateBanner
+          title="Permission denied"
+          message="The owner or admin has disabled member-added expenses."
+          tone="locked"
+        />
+      ) : null}
       {createMutation.isError ? (
         <Card variant="soft">
           <AppText variant="bodyStrong" style={styles.errorText}>
@@ -129,6 +146,7 @@ export function CreateExpenseSheet({
             onBlur={field.onBlur}
             error={errors.title?.message}
             placeholder="Groceries, taxi, dinner..."
+            editable={!formDisabled}
           />
         )}
       />
@@ -147,6 +165,7 @@ export function CreateExpenseSheet({
                 error={errors.amountCents?.message}
                 keyboardType="decimal-pad"
                 placeholder="23.50"
+                editable={!formDisabled}
               />
             )}
           />
@@ -164,6 +183,7 @@ export function CreateExpenseSheet({
                 error={errors.currencyCode?.message}
                 autoCapitalize="characters"
                 maxLength={3}
+                editable={!formDisabled}
               />
             )}
           />
@@ -181,6 +201,7 @@ export function CreateExpenseSheet({
             onBlur={field.onBlur}
             error={errors.category?.message}
             placeholder="Food, transport, stay..."
+            editable={!formDisabled}
           />
         )}
       />
@@ -195,6 +216,7 @@ export function CreateExpenseSheet({
             onChange={(nextDate) => field.onChange(nextDate ?? '')}
             allowClear={false}
             error={errors.expenseDate?.message}
+            disabled={formDisabled}
           />
         )}
       />
@@ -210,6 +232,7 @@ export function CreateExpenseSheet({
             onBlur={field.onBlur}
             error={errors.description?.message}
             placeholder="Optional note."
+            editable={!formDisabled}
           />
         )}
       />
@@ -223,6 +246,7 @@ export function CreateExpenseSheet({
             selected={paidByUserId === member.userId}
             selectedLabel="Payer"
             unselectedLabel="Select"
+            disabled={formDisabled}
             onPress={() => setValue('paidByUserId', member.userId, { shouldDirty: true, shouldValidate: true })}
           />
         ))}
@@ -238,6 +262,7 @@ export function CreateExpenseSheet({
             selected={(excludedUserIds ?? []).includes(member.userId)}
             selectedLabel="Excluded"
             unselectedLabel="Included"
+            disabled={formDisabled}
             onPress={() => {
               const current = excludedUserIds ?? [];
               setValue(
@@ -259,7 +284,7 @@ export function CreateExpenseSheet({
     <Button
       label="Save expense"
       loading={createMutation.isPending}
-      disabled={!user || createMutation.isPending || members.length === 0}
+      disabled={!user || formDisabled || members.length === 0}
       onPress={submit}
     />
   );
@@ -293,19 +318,27 @@ function MemberChoice({
   selectedLabel,
   unselectedLabel,
   onPress,
+  disabled = false,
 }: {
   member: TripMember;
   selected: boolean;
   selectedLabel: string;
   unselectedLabel: string;
   onPress: () => void;
+  disabled?: boolean;
 }) {
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityState={{ selected }}
+      accessibilityState={{ selected, disabled }}
+      disabled={disabled}
       onPress={onPress}
-      style={({ pressed }) => [styles.memberRow, selected && styles.memberSelected, pressed && styles.pressed]}
+      style={({ pressed }) => [
+        styles.memberRow,
+        selected && styles.memberSelected,
+        disabled && styles.disabled,
+        pressed && !disabled && styles.pressed,
+      ]}
     >
       <View style={styles.memberCopy}>
         <View style={styles.memberIcon}>
@@ -373,6 +406,9 @@ const styles = StyleSheet.create({
   },
   pressed: {
     opacity: 0.78,
+  },
+  disabled: {
+    opacity: 0.58,
   },
   errorText: {
     color: colors.danger,

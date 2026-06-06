@@ -7,8 +7,9 @@ import { PlaceholderState } from '../../../../../src/components/feedback/Placeho
 import { AppText } from '../../../../../src/components/ui/AppText';
 import { Button } from '../../../../../src/components/ui/Button';
 import { Screen } from '../../../../../src/components/ui/Screen';
+import { StateBanner } from '../../../../../src/components/ui/StateBanner';
 import { useTasksQuery, useUpdateTaskStatusMutation } from '../../../../../src/hooks/usePlanning';
-import { useTripMembersQuery } from '../../../../../src/hooks/useTrips';
+import { useTripMembersQuery, useTripQuery } from '../../../../../src/hooks/useTrips';
 import { Task, TaskStatus } from '../../../../../src/types/planning';
 import { TripMember } from '../../../../../src/types/trip';
 
@@ -16,11 +17,12 @@ const statuses: TaskStatus[] = ['pending', 'in_progress', 'done'];
 
 export default function TasksScreen() {
   const { tripId } = useLocalSearchParams<{ tripId: string }>();
+  const tripQuery = useTripQuery(tripId);
   const tasksQuery = useTasksQuery(tripId);
   const membersQuery = useTripMembersQuery(tripId);
   const statusMutation = useUpdateTaskStatusMutation(tripId);
 
-  if (tasksQuery.isLoading || membersQuery.isLoading) {
+  if (tripQuery.isLoading || tasksQuery.isLoading || membersQuery.isLoading) {
     return (
       <Screen>
         <LoadingState label="Loading tasks..." />
@@ -29,6 +31,7 @@ export default function TasksScreen() {
   }
 
   const members = membersQuery.data ?? [];
+  const isReadOnly = Boolean(tripQuery.data?.closedAt);
 
   return (
     <Screen>
@@ -39,16 +42,29 @@ export default function TasksScreen() {
               <AppText variant="eyebrow">Tasks</AppText>
               <AppText variant="title">Planning tasks</AppText>
             </View>
+            {isReadOnly ? (
+              <StateBanner title="Trip is read-only" message="Tasks cannot be changed while this trip is closed." tone="locked" />
+            ) : null}
+            {tripQuery.error ? (
+              <InlineNotice title="Trip failed to load" message={tripQuery.error.message} tone="error" />
+            ) : null}
             {tasksQuery.error ? (
               <InlineNotice title="Tasks failed to load" message={tasksQuery.error.message} tone="error" />
+            ) : null}
+            {membersQuery.error ? (
+              <InlineNotice title="Members failed to load" message={membersQuery.error.message} tone="error" />
             ) : null}
             {statusMutation.error ? (
               <InlineNotice title="Task update failed" message={statusMutation.error.message} tone="error" />
             ) : null}
             {statusMutation.isSuccess ? <InlineNotice title="Task updated" tone="success" /> : null}
-            <Link href={`/trips/${tripId}/plan/tasks/create`} asChild>
-              <Button label="Create task" />
-            </Link>
+            {isReadOnly ? (
+              <Button label="Create task" disabled />
+            ) : (
+              <Link href={`/trips/${tripId}/plan/tasks/create`} asChild>
+                <Button label="Create task" />
+              </Link>
+            )}
           </View>
         }
         contentContainerStyle={styles.list}
@@ -59,7 +75,7 @@ export default function TasksScreen() {
           <TaskCard
             task={item}
             members={members}
-            disabled={statusMutation.isPending}
+            disabled={isReadOnly || statusMutation.isPending}
             onStatusChange={(status) => statusMutation.mutate({ taskId: item.id, status })}
           />
         )}

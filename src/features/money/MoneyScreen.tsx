@@ -18,6 +18,7 @@ import { CreateExpenseSheet } from './CreateExpenseSheet';
 import { ExpensesTab } from './ExpensesTab';
 import { BalancesTab } from './BalancesTab';
 import { SettlementsTab } from './SettlementsTab';
+import { canManageTrip } from '../trip-admin/adminUtils';
 
 type MoneyTab = 'expenses' | 'balances' | 'settlements';
 
@@ -43,6 +44,10 @@ export function MoneyScreen({ tripId, initialTab = 'expenses' }: MoneyScreenProp
   const suggestions = computeBalancesMutation.data?.settlements ?? suggestionsQuery.data ?? [];
   const payments = paymentsQuery.data ?? [];
   const members = membersQuery.data ?? [];
+  const sharedLoadError = tripQuery.error ?? membersQuery.error;
+  const canManage = canManageTrip(user?.id, members);
+  const readOnly = Boolean(tripQuery.data?.closedAt);
+  const canAddExpense = Boolean(tripQuery.data && (tripQuery.data.memberCanCreateExpenses || canManage));
   const tabs = useMemo(
     () => [
       { value: 'expenses' as const, label: 'Expenses', badge: expenses.length },
@@ -68,8 +73,10 @@ export function MoneyScreen({ tripId, initialTab = 'expenses' }: MoneyScreenProp
         <ExpensesTab
           tripId={tripId}
           expenses={expenses}
-          isLoading={expensesQuery.isLoading}
-          error={expensesQuery.error}
+          isLoading={expensesQuery.isLoading || tripQuery.isLoading || membersQuery.isLoading}
+          error={expensesQuery.error ?? sharedLoadError}
+          canAddExpense={canAddExpense}
+          readOnly={readOnly}
           onAddExpense={() => setCreateExpenseVisible(true)}
         />
       ) : null}
@@ -81,7 +88,7 @@ export function MoneyScreen({ tripId, initialTab = 'expenses' }: MoneyScreenProp
           members={members}
           isLoading={balancesQuery.isLoading || membersQuery.isLoading}
           refreshing={computeBalancesMutation.isPending}
-          error={balancesQuery.error ?? computeBalancesMutation.error}
+          error={balancesQuery.error ?? computeBalancesMutation.error ?? sharedLoadError}
           onRefresh={() => computeBalancesMutation.mutate()}
         />
       ) : null}
@@ -96,7 +103,7 @@ export function MoneyScreen({ tripId, initialTab = 'expenses' }: MoneyScreenProp
           isLoading={suggestionsQuery.isLoading || paymentsQuery.isLoading || membersQuery.isLoading || tripQuery.isLoading}
           refreshing={computeBalancesMutation.isPending}
           markingPaid={markPaidMutation.isPending}
-          error={suggestionsQuery.error ?? paymentsQuery.error ?? computeBalancesMutation.error}
+          error={suggestionsQuery.error ?? paymentsQuery.error ?? computeBalancesMutation.error ?? sharedLoadError}
           markPaidError={markPaidMutation.error}
           onRefresh={() => computeBalancesMutation.mutate()}
           onMarkPaid={(suggestionId) => markPaidMutation.mutate({ suggestionId })}

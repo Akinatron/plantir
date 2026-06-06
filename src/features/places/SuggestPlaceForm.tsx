@@ -14,7 +14,7 @@ import {
   useDestinationCustomFieldsQuery,
   useFetchLinkMetadataMutation,
 } from '../../hooks/useDestination';
-import { useTripQuery } from '../../hooks/useTrips';
+import { useTripMembersQuery, useTripQuery } from '../../hooks/useTrips';
 import {
   DestinationProposalFormValues,
   ParsedDestinationProposalFormValues,
@@ -28,11 +28,13 @@ import { ErrorState } from '../../components/ui/ErrorState';
 import { LoadingState } from '../../components/ui/LoadingState';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { Screen } from '../../components/ui/Screen';
+import { StateBanner } from '../../components/ui/StateBanner';
 import { TextArea } from '../../components/ui/TextArea';
 import { TextField } from '../../components/ui/TextField';
 import { AppText } from '../../components/ui/AppText';
 import { PlaceImageGallery } from './PlaceImageGallery';
 import { CustomFieldDraftValue, CustomFieldEditor } from './CustomFieldEditor';
+import { canManageTrip } from '../trip-admin/adminUtils';
 
 type SuggestPlaceFormProps = {
   tripId: string;
@@ -43,6 +45,7 @@ export function SuggestPlaceForm({ tripId, pollId }: SuggestPlaceFormProps) {
   const { user } = useAuth();
   const bundleQuery = useDestinationBundleQuery(tripId);
   const tripQuery = useTripQuery(tripId);
+  const membersQuery = useTripMembersQuery(tripId);
   const activePollId = pollId ?? bundleQuery.data?.poll?.id ?? null;
   const customFieldsQuery = useDestinationCustomFieldsQuery(tripId, activePollId);
   const createProposalMutation = useCreateDestinationProposalMutation(user?.id);
@@ -90,7 +93,10 @@ export function SuggestPlaceForm({ tripId, pollId }: SuggestPlaceFormProps) {
     name: ['imageBase64', 'imageContentType', 'url', 'title'],
   });
   const previewUri = imageBase64 ? `data:${imageContentType};base64,${imageBase64}` : null;
-  const canCreateFields = Boolean(tripQuery.data?.memberCanModifyPlaceFields);
+  const canManage = canManageTrip(user?.id, membersQuery.data ?? []);
+  const isReadOnly = Boolean(tripQuery.data?.closedAt);
+  const canCreateProposal = Boolean(tripQuery.data && (tripQuery.data.memberCanCreateProposals || canManage));
+  const canCreateFields = Boolean(tripQuery.data?.memberCanModifyPlaceFields || canManage);
 
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -151,12 +157,40 @@ export function SuggestPlaceForm({ tripId, pollId }: SuggestPlaceFormProps) {
     });
   };
 
-  if (bundleQuery.isLoading || tripQuery.isLoading) {
+  if (bundleQuery.isLoading || tripQuery.isLoading || membersQuery.isLoading) {
     return <LoadingState label="Loading place form..." />;
+  }
+
+  if (tripQuery.isError) {
+    return <ErrorState title="Trip failed to load" message={tripQuery.error.message} />;
+  }
+
+  if (membersQuery.isError) {
+    return <ErrorState title="Members failed to load" message={membersQuery.error.message} />;
   }
 
   if (!activePollId) {
     return <ErrorState title="No place vote" message="Start a destination poll before adding proposals." />;
+  }
+
+  if (isReadOnly) {
+    return (
+      <Screen centered>
+        <StateBanner title="Trip is read-only" message="Places cannot be added while this trip is closed." tone="locked" />
+      </Screen>
+    );
+  }
+
+  if (!canCreateProposal) {
+    return (
+      <Screen centered>
+        <StateBanner
+          title="Permission denied"
+          message="The owner or admin has disabled member-created place proposals."
+          tone="locked"
+        />
+      </Screen>
+    );
   }
 
   return (

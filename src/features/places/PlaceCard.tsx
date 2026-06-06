@@ -25,6 +25,7 @@ type PlaceCardProps = {
   result?: DestinationPollResult;
   customFields: DestinationCustomField[];
   selected?: boolean;
+  showVotes?: boolean;
   votingDisabled?: boolean;
   voting?: boolean;
   onVote: () => void;
@@ -36,6 +37,7 @@ export function PlaceCard({
   result,
   customFields,
   selected = false,
+  showVotes = true,
   votingDisabled = false,
   voting = false,
   onVote,
@@ -46,13 +48,15 @@ export function PlaceCard({
     proposal.totalPriceCents !== null && proposal.currencyCode
       ? formatCents(proposal.totalPriceCents, proposal.currencyCode)
       : 'No price yet';
-  const voteLabel = `${result?.voteCount ?? 0} vote${(result?.voteCount ?? 0) === 1 ? '' : 's'}`;
+  const voteLabel = showVotes
+    ? `${result?.voteCount ?? 0} vote${(result?.voteCount ?? 0) === 1 ? '' : 's'}`
+    : 'Votes hidden';
 
   return (
     <Card variant="elevated" padding="none" selected={selected} style={styles.card}>
       <View style={styles.media}>
         <PlaceImageGallery images={imagesQuery.data ?? []} title={proposal.title} compact />
-        {result?.rank ? (
+        {showVotes && result?.rank ? (
           <View style={styles.rankBadge}>
             <AppText variant="label" style={styles.rankText}>
               #{result.rank}

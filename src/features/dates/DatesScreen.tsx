@@ -7,8 +7,10 @@ import { AppText } from '../../components/ui/AppText';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { EmptyState } from '../../components/ui/EmptyState';
+import { ErrorState } from '../../components/ui/ErrorState';
 import { LoadingState } from '../../components/ui/LoadingState';
 import { Screen } from '../../components/ui/Screen';
+import { StateBanner } from '../../components/ui/StateBanner';
 import { spacing } from '../../design/spacing';
 import { useAuth } from '../auth/AuthProvider';
 import {
@@ -75,6 +77,18 @@ export function DatesScreen({ tripId }: DatesScreenProps) {
     );
   }
 
+  if (tripQuery.isError) {
+    return <ErrorState title="Trip failed to load" message={tripQuery.error.message} />;
+  }
+
+  if (bundleQuery.isError) {
+    return <ErrorState title="Date poll failed to load" message={bundleQuery.error.message} />;
+  }
+
+  if (membersQuery.isError) {
+    return <ErrorState title="Members failed to load" message={membersQuery.error.message} />;
+  }
+
   if (!poll) {
     return (
       <Screen scroll>
@@ -83,15 +97,24 @@ export function DatesScreen({ tripId }: DatesScreenProps) {
             title="No date poll yet"
             description="An owner or admin needs to create a date poll before members can add availability."
           />
-          <Link href={`/trips/${tripId}/date-poll/setup`} asChild>
-            <Button label="Set up date poll" />
-          </Link>
+          {isAdmin ? (
+            <Link href={`/trips/${tripId}/date-poll/setup`} asChild>
+              <Button label="Set up date poll" />
+            </Link>
+          ) : (
+            <StateBanner
+              title="Waiting for an admin"
+              message="Only the owner or an admin can create the date poll."
+              tone="locked"
+            />
+          )}
         </Card>
       </Screen>
     );
   }
 
   const isClosed = poll.status === 'closed';
+  const isReadOnly = isClosed || Boolean(tripQuery.data?.closedAt);
   const saveAvailability = async () => {
     if (!user?.id) {
       return;
@@ -121,7 +144,13 @@ export function DatesScreen({ tripId }: DatesScreenProps) {
         </AppText>
       </View>
 
-      {isClosed ? <InlineNotice title="Date poll closed" message="Availability is read-only." tone="success" /> : null}
+      {isReadOnly ? (
+        <StateBanner
+          title={isClosed ? 'Date poll closed' : 'Trip closed'}
+          message="Availability is read-only."
+          tone="locked"
+        />
+      ) : null}
       {saveMutation.error ? (
         <InlineNotice title="Availability failed to save" message={saveMutation.error.message} tone="error" />
       ) : null}
@@ -145,7 +174,7 @@ export function DatesScreen({ tripId }: DatesScreenProps) {
         totalDays={days.length}
         deadlineAt={poll.votingDeadlineAt}
         hasVoted={hasVoted}
-        disabled={isClosed || !user}
+        disabled={isReadOnly || !user}
         onEdit={() => {
           setDraftDates(new Set(initialAvailableDates));
           setIsEditing(true);
@@ -156,7 +185,7 @@ export function DatesScreen({ tripId }: DatesScreenProps) {
         <AvailabilityCalendar
           days={days}
           selectedDates={selectedDates}
-          disabled={isClosed || !user}
+          disabled={isReadOnly || !user}
           isSaving={saveMutation.isPending}
           onToggleDate={(date) => {
             setDraftDates((current) => {
@@ -208,7 +237,7 @@ export function DatesScreen({ tripId }: DatesScreenProps) {
                 <Button
                   label={closeMutation.isPending ? 'Closing...' : 'Close poll and save winner'}
                   variant="secondary"
-                  disabled={isClosed || closeMutation.isPending || !winner}
+                  disabled={isReadOnly || closeMutation.isPending || !winner}
                   loading={closeMutation.isPending}
                   onPress={() => {
                     if (!poll?.id || !winner) {
@@ -229,12 +258,18 @@ export function DatesScreen({ tripId }: DatesScreenProps) {
         ) : (
           <Card variant="soft" padding="lg">
             <EmptyState
-              title="Ranking hidden"
+              title="Results hidden"
               description="The owner or admin has disabled date results for members."
             />
           </Card>
         )
-      ) : null}
+      ) : (
+        <StateBanner
+          title="Vote first"
+          message="Save your availability before viewing the date ranking."
+          tone="info"
+        />
+      )}
     </Screen>
   );
 }

@@ -15,6 +15,7 @@ import { Screen } from '../../components/ui/Screen';
 import { TextArea } from '../../components/ui/TextArea';
 import { TextField } from '../../components/ui/TextField';
 import { ToggleRow } from '../../components/ui/ToggleRow';
+import { StateBanner } from '../../components/ui/StateBanner';
 import { colors } from '../../design/theme';
 import { spacing } from '../../design/spacing';
 import {
@@ -134,6 +135,21 @@ export function SettingsScreen({ tripId }: SettingsScreenProps) {
       {closeTripMutation.isError ? <ErrorState title="Trip close failed" message={closeTripMutation.error.message} /> : null}
       {reopenTripMutation.isError ? (
         <ErrorState title="Trip reopen failed" message={reopenTripMutation.error.message} />
+      ) : null}
+      {!canManage ? (
+        <StateBanner
+          title="Permission denied"
+          message="Only the owner or an admin can change trip settings."
+          tone="locked"
+        />
+      ) : null}
+      {updateMutation.isSuccess ? <StateBanner title="Settings saved" tone="success" /> : null}
+      {confirmTripMutation.isSuccess ? <StateBanner title="Trip confirmed" tone="success" /> : null}
+      {closeTripMutation.isSuccess ? (
+        <StateBanner title="Trip closed" message="Members now see this trip as read-only." tone="success" />
+      ) : null}
+      {reopenTripMutation.isSuccess ? (
+        <StateBanner title="Trip reopened" message="Members can edit allowed trip data again." tone="success" />
       ) : null}
 
       <Card variant="elevated">
