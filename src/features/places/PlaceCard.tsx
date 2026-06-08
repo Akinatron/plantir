@@ -1,5 +1,5 @@
 import { ReactNode } from 'react';
-import { Linking, Pressable, StyleSheet, View } from 'react-native';
+import { Linking, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { Link } from 'expo-router';
 import { BedDouble, Bath, ExternalLink, MapPin, Users, Vote } from 'lucide-react-native';
 
@@ -42,6 +42,8 @@ export function PlaceCard({
   voting = false,
   onVote,
 }: PlaceCardProps) {
+  const { width } = useWindowDimensions();
+  const useStackedLayout = width < 760;
   const imagesQuery = useProposalImagesQuery(proposal.id);
   const customValuesQuery = useDestinationCustomFieldValuesQuery(proposal.id);
   const price =
@@ -53,9 +55,14 @@ export function PlaceCard({
     : 'Votes hidden';
 
   return (
-    <Card variant="elevated" padding="none" selected={selected} style={styles.card}>
-      <View style={styles.media}>
-        <PlaceImageGallery images={imagesQuery.data ?? []} title={proposal.title} compact />
+    <Card
+      variant="elevated"
+      padding="none"
+      selected={selected}
+      style={[styles.card, !useStackedLayout && styles.cardHorizontal]}
+    >
+      <View style={[styles.media, !useStackedLayout && styles.mediaHorizontal]}>
+        <PlaceImageGallery images={imagesQuery.data ?? []} title={proposal.title} compact={useStackedLayout} />
         {showVotes && result?.rank ? (
           <View style={styles.rankBadge}>
             <AppText variant="label" style={styles.rankText}>
@@ -65,7 +72,7 @@ export function PlaceCard({
         ) : null}
       </View>
 
-      <View style={styles.body}>
+      <View style={[styles.body, !useStackedLayout && styles.bodyHorizontal]}>
         <View style={styles.titleRow}>
           <View style={styles.titleCopy}>
             <AppText variant="subtitle" numberOfLines={2}>
@@ -154,8 +161,15 @@ const styles = StyleSheet.create({
   card: {
     overflow: 'hidden',
   },
+  cardHorizontal: {
+    flexDirection: 'row',
+  },
   media: {
     position: 'relative',
+  },
+  mediaHorizontal: {
+    flexShrink: 0,
+    width: 360,
   },
   rankBadge: {
     alignItems: 'center',
@@ -172,8 +186,13 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   body: {
+    flex: 1,
     gap: spacing[4],
     padding: spacing[4],
+  },
+  bodyHorizontal: {
+    justifyContent: 'space-between',
+    minHeight: 230,
   },
   titleRow: {
     alignItems: 'flex-start',

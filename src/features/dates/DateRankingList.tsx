@@ -86,12 +86,14 @@ export function DateRankingList({
               <View style={styles.rowCopy}>
                 <AppText variant="bodyStrong">{formatDateRange(result.startDate, result.endDate)}</AppText>
                 <AppText variant="caption">
-                  {result.durationDays} days · {result.availableMemberCount}/{result.totalMemberCount} available
+                  {result.durationDays} days | {result.availableMemberCount}/{result.totalMemberCount} available
                 </AppText>
               </View>
-              <AppText variant="label" style={styles.percent}>
-                {formatPercentage(result.availablePercentage)}
-              </AppText>
+              <View style={styles.percentBadge}>
+                <AppText variant="label" style={styles.percent}>
+                  {formatPercentage(result.availablePercentage)}
+                </AppText>
+              </View>
             </Pressable>
           );
         })}
@@ -138,7 +140,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.surface,
     borderColor: colors.border,
-    borderRadius: radius.lg,
+    borderRadius: radius.xl,
     borderWidth: 1,
     flexDirection: 'row',
     gap: spacing[3],
@@ -165,5 +167,13 @@ const styles = StyleSheet.create({
   },
   percent: {
     color: colors.primary,
+  },
+  percentBadge: {
+    alignItems: 'center',
+    backgroundColor: colors.surfaceSea,
+    borderRadius: radius.full,
+    minWidth: 54,
+    paddingHorizontal: spacing[2],
+    paddingVertical: spacing[2],
   },
 });

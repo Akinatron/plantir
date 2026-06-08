@@ -31,10 +31,17 @@ export function PlaceImageGallery({ images = [], title, previewUri, compact = fa
         />
       ) : (
         <View style={styles.placeholder}>
-          <ImageIcon color={colors.primary} size={compact ? 22 : 28} />
+          <View style={styles.placeholderBadge}>
+            <ImageIcon color={colors.primary} size={compact ? 22 : 28} />
+          </View>
+          {!compact ? (
+            <AppText variant="bodyStrong" numberOfLines={1} style={styles.placeholderTitle}>
+              {title}
+            </AppText>
+          ) : null}
           {!compact ? (
             <AppText variant="caption" style={styles.placeholderText}>
-              Add a photo when you have one
+              Add photos to make this place easier to compare.
             </AppText>
           ) : null}
         </View>
@@ -46,13 +53,13 @@ export function PlaceImageGallery({ images = [], title, previewUri, compact = fa
 const styles = StyleSheet.create({
   frame: {
     aspectRatio: 16 / 9,
-    backgroundColor: colors.surfaceSea,
+    backgroundColor: colors.surfaceSky,
     borderRadius: radius.lg,
     overflow: 'hidden',
     width: '100%',
   },
   compactFrame: {
-    aspectRatio: 4 / 3,
+    aspectRatio: 16 / 9,
   },
   image: {
     height: '100%',
@@ -64,6 +71,20 @@ const styles = StyleSheet.create({
     gap: spacing[2],
     justifyContent: 'center',
     padding: spacing[3],
+  },
+  placeholderBadge: {
+    alignItems: 'center',
+    backgroundColor: colors.surface,
+    borderColor: colors.border,
+    borderRadius: radius.full,
+    borderWidth: 1,
+    height: 54,
+    justifyContent: 'center',
+    width: 54,
+  },
+  placeholderTitle: {
+    maxWidth: '80%',
+    textAlign: 'center',
   },
   placeholderText: {
     textAlign: 'center',

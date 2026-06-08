@@ -63,22 +63,31 @@ export function TripDashboard({ tripId }: TripDashboardProps) {
 
   return (
     <Screen scroll contentContainerStyle={styles.screenContent}>
-      <View style={styles.hero}>
-        <View style={styles.heroCopy}>
-          <TripStatusBadge trip={trip} />
-          <AppText variant="display">{trip.title}</AppText>
-          {trip.description ? <AppText variant="body">{trip.description}</AppText> : null}
-          <AppText variant="caption">{formatTripDates(trip)}</AppText>
+      <View style={styles.heroCard}>
+        <View style={styles.heroAccent} />
+        <View style={styles.hero}>
+          <View style={styles.heroCopy}>
+            <TripStatusBadge trip={trip} />
+            <AppText variant="display">{trip.title}</AppText>
+            {trip.description ? <AppText variant="body">{trip.description}</AppText> : null}
+            <AppText variant="caption">{formatTripDates(trip)}</AppText>
+          </View>
+
+          <View style={styles.heroActions}>
+            <Link href={`/trips/${trip.id}/settings`} asChild>
+              <IconButton
+                label="Trip settings"
+                icon={<Settings color={colors.primary} size={20} strokeWidth={2.2} />}
+                variant="secondary"
+              />
+            </Link>
+          </View>
         </View>
 
-        <View style={styles.heroActions}>
-          <Link href={`/trips/${trip.id}/settings`} asChild>
-            <IconButton
-              label="Trip settings"
-              icon={<Settings color={colors.primary} size={20} strokeWidth={2.2} />}
-              variant="secondary"
-            />
-          </Link>
+        <View style={styles.heroStats}>
+          <HeroStat label="Dates" value={trip.startsOn && trip.endsOn ? formatShortRange(trip.startsOn, trip.endsOn) : 'Open'} />
+          <HeroStat label="Places" value={`${proposals.length} option${proposals.length === 1 ? '' : 's'}`} />
+          <HeroStat label="Group" value={`${members.length} member${members.length === 1 ? '' : 's'}`} />
         </View>
       </View>
 
@@ -147,6 +156,17 @@ export function TripDashboard({ tripId }: TripDashboardProps) {
   );
 }
 
+function HeroStat({ label, value }: { label: string; value: string }) {
+  return (
+    <View style={styles.heroStat}>
+      <AppText variant="caption">{label}</AppText>
+      <AppText variant="bodyStrong" numberOfLines={1}>
+        {value}
+      </AppText>
+    </View>
+  );
+}
+
 function MembersSummary({
   tripId,
   members,
@@ -208,6 +228,10 @@ function formatDate(value: string) {
   });
 }
 
+function formatShortRange(startDate: string, endDate: string) {
+  return `${formatDate(startDate)} - ${formatDate(endDate)}`;
+}
+
 function formatExpenseTotal(expenses: { amountCents: number; currencyCode: string }[]) {
   if (expenses.length === 0) {
     return 'No shared costs yet';
@@ -235,6 +259,24 @@ const styles = StyleSheet.create({
     paddingBottom: spacing[10],
     paddingTop: spacing[5],
   },
+  heroCard: {
+    backgroundColor: colors.surfaceSoft,
+    borderColor: colors.border,
+    borderRadius: radius.xxl,
+    borderWidth: 1,
+    gap: spacing[5],
+    overflow: 'hidden',
+    padding: spacing[5],
+    position: 'relative',
+  },
+  heroAccent: {
+    backgroundColor: colors.surfaceSea,
+    bottom: 0,
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    width: 160,
+  },
   hero: {
     alignItems: 'flex-start',
     flexDirection: 'row',
@@ -249,6 +291,22 @@ const styles = StyleSheet.create({
   },
   heroActions: {
     alignItems: 'flex-end',
+    zIndex: 1,
+  },
+  heroStats: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing[3],
+    zIndex: 1,
+  },
+  heroStat: {
+    backgroundColor: colors.surface,
+    borderColor: colors.border,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    minWidth: 150,
+    paddingHorizontal: spacing[4],
+    paddingVertical: spacing[3],
   },
   previewGrid: {
     alignItems: 'stretch',

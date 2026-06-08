@@ -117,8 +117,13 @@ const styles = StyleSheet.create({
   },
   row: {
     alignItems: 'center',
+    backgroundColor: colors.surfaceSoft,
+    borderColor: colors.border,
+    borderRadius: radius.xl,
+    borderWidth: 1,
     flexDirection: 'row',
     gap: spacing[3],
+    padding: spacing[3],
   },
   rank: {
     alignItems: 'center',

@@ -26,7 +26,7 @@ export function Card({ children, selected = false, variant = 'default', padding 
 
 const styles = StyleSheet.create({
   base: {
-    borderRadius: radius.lg,
+    borderRadius: radius.xl,
     gap: spacing[3],
   },
   default: {
